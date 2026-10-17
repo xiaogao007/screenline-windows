@@ -40,9 +40,14 @@ namespace Screenline
                 library.ImportBitmap(DemoImage(380, 500, 2));
                 var shelf = new ShelfWindow(library.Items) { AnimationsEnabled = false };
                 shelf.Reveal(System.Windows.Forms.Screen.PrimaryScreen, false);
-                shelf.Width = 1180; shelf.UpdateLayout();
+                double shelfWidth = Math.Min(1180, Math.Max(640, SystemParameters.WorkArea.Width));
+                shelf.Width = shelfWidth;
+                // Hosted Windows runners can use a smaller virtual desktop. Drain the
+                // native resize/layout messages before checking the requested width.
+                shelf.Dispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(delegate { shelf.UpdateLayout(); }));
                 Render(shelf, Path.Combine(destination, "shelf-preview.png"), true);
-                Check(shelf.IsRevealed && shelf.ActualWidth == 1180, "Shelf shows native transparent WPF window");
+                Check(shelf.IsRevealed && shelf.IsVisible && shelf.AllowsTransparency && Math.Abs(shelf.ActualWidth - shelfWidth) < 1,
+                    "Shelf shows native transparent WPF window (requested=" + shelfWidth.ToString(CultureInfo.InvariantCulture) + ", actual=" + shelf.ActualWidth.ToString(CultureInfo.InvariantCulture) + ")");
                 bool settingsRaised = false;
                 shelf.SettingsRequested += delegate { settingsRaised = true; };
                 var settingsButton = Descendants<Button>(shelf).FirstOrDefault(delegate(Button b) { return AutomationProperties.GetName(b) == "设置"; });
