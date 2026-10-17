@@ -14,14 +14,20 @@
     <AppConfig>Screenline.exe.config</AppConfig>
     <Optimize>true</Optimize>
     <LangVersion>5</LangVersion>
+    <Version Condition=" '$(Version)' == '' ">$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\VERSION').Trim())</Version>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" /><Reference Include="System.Core" />
-    <Reference Include="System.Drawing" /><Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System" /><Reference Include="System.Core" /><Reference Include="System.Net.Http" />
+    <Reference Include="System.Drawing" /><Reference Include="System.Runtime.Serialization" /><Reference Include="System.Xml" />
     <Reference Include="System.Windows.Forms" /><Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" /><Reference Include="PresentationCore" /><Reference Include="PresentationFramework" />
     <Compile Include="src\*.cs" />
+    <Compile Include="obj\Screenline.AssemblyVersion.cs" />
+    <None Include="VERSION" />
     <None Include="app.manifest" /><None Include="Screenline.exe.config" />
   </ItemGroup>
+  <Target Name="GenerateScreenlineVersion" BeforeTargets="CoreCompile">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\build.ps1&quot; -Version &quot;$(Version)&quot; -WriteVersionOnly" />
+  </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

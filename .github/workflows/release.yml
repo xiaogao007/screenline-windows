@@ -44,7 +44,9 @@ jobs:
 
       - name: Build and run native self-tests
         timeout-minutes: 3
-        run: .\build.ps1 -Test -ClipboardTest
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: .\build.ps1 -Version $env:RELEASE_TAG -Test -ClipboardTest
 
       - name: Package tested binaries and exact source
         id: package

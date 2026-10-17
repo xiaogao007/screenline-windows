@@ -59,6 +59,9 @@ if (!(Test-Path -LiteralPath $reportPath -PathType Leaf)) {
     throw 'Self-test report is missing. Run .\build.ps1 -Test before packaging.'
 }
 $executable = Get-Item -LiteralPath (Join-Path $projectRoot 'Screenline.exe')
+if ($executable.VersionInfo.ProductVersion -cne $version) {
+    throw ('Screenline.exe version does not match ' + $Tag + '. Run .\build.ps1 -Version ' + $Tag + ' -Test before packaging.')
+}
 $report = Get-Item -LiteralPath $reportPath
 if ($report.LastWriteTimeUtc -lt $executable.LastWriteTimeUtc) {
     throw 'Self-test report is older than Screenline.exe. Run .\build.ps1 -Test again.'

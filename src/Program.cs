@@ -61,9 +61,10 @@ namespace Screenline
         private DateTime edgeSince = DateTime.MinValue, leaveSince = DateTime.MinValue, lastReveal = DateTime.MinValue;
         private string revealedScreen;
         private string startupStatus;
-        private bool busy, disposed;
+        private bool busy, disposed, shuttingDown;
         private System.Drawing.Icon trayIcon;
         private CancellationTokenSource copyCancellation;
+        private UpdateWindow updateWindow;
 
         internal AppController(Application application)
         {
@@ -102,6 +103,7 @@ namespace Screenline
             AddMenu(menu, "撤销移出", delegate { library.UndoLastRemove(); });
             AddMenu(menu, "打开本地图库", delegate { Process.Start(new ProcessStartInfo("explorer.exe", "\"" + root + "\"") { UseShellExecute = true }); });
             AddMenu(menu, "设置…", ShowSettings);
+            AddMenu(menu, "检查更新…", delegate { ShowUpdates(null); });
             menu.Items.Add(new Forms.ToolStripSeparator());
             AddMenu(menu, "退出截图晾台", delegate { app.Shutdown(); });
             tray.ContextMenuStrip = menu;
@@ -233,6 +235,7 @@ namespace Screenline
             busy = true; shelf.Conceal();
             try {
                 var window = new SettingsWindow(settings, IsStartupEnabled(), root);
+                window.UpdatesRequested += delegate { ShowUpdates(window); };
                 if (window.ShowDialog() == true) {
                     var candidate = window.Result; SettingsStore.Save(root, candidate); settings = candidate; sources.Restart(settings);
                     try {
@@ -242,7 +245,27 @@ namespace Screenline
                     } catch (Exception ex) { Report("设置已保存，但开机启动设置失败：" + ex.Message); }
                 }
             } catch (Exception ex) { Report("无法保存设置：" + ex.Message); }
-            finally { busy = false; Reveal(true); }
+            finally { busy = false; if (!disposed && !shuttingDown) Reveal(true); }
+        }
+        private void ShowUpdates(Window owner)
+        {
+            if (disposed) return;
+            if (updateWindow != null) { updateWindow.Activate(); return; }
+            bool wasBusy = busy;
+            busy = true; shelf.Conceal();
+            try {
+                updateWindow = new UpdateWindow(delegate(string installer) {
+                    var process = Process.Start(new ProcessStartInfo(installer) { UseShellExecute = true });
+                    if (process == null) throw new InvalidOperationException("未能启动安装程序。");
+                    process.Dispose();
+                    shuttingDown = true;
+                    app.Shutdown();
+                });
+                if (owner != null) { updateWindow.Owner = owner; updateWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner; }
+                updateWindow.ShowDialog();
+            }
+            catch (Exception ex) { if (!disposed) Report("无法打开更新窗口：" + ex.Message); }
+            finally { updateWindow = null; busy = wasBusy; if (!disposed && !shuttingDown && !wasBusy) Reveal(true); }
         }
         private System.Drawing.Icon CreateIcon()
         {
@@ -263,6 +286,7 @@ namespace Screenline
         {
             if (disposed) return; disposed = true;
             if (copyCancellation != null) copyCancellation.Cancel();
+            if (updateWindow != null) updateWindow.Close();
             timer.Stop(); sources.Dispose(); Native.UnregisterHotKey(messageWindow.Handle, 1); Native.UnregisterHotKey(messageWindow.Handle, 2); messageWindow.Dispose();
             tray.Visible = false; tray.Dispose(); trayIcon.Dispose(); shelf.Close();
         }

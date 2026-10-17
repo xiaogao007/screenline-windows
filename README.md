@@ -25,7 +25,7 @@ Screenline 受 [Tendedero](https://github.com/alejandrobujan/tendedero) 启发�
 
 需要 **.NET Framework 4.8**；Windows 11 已内置，较新的 Windows 10 通常也已安装。运行程序不需要 Node、Python、.NET SDK 或管理员权限。
 
-程序和安装器尚未代码签名，Windows 可能显示 SmartScreen 提示；请核对下载来源和 SHA-256 校验值。安装器会检查 .NET Framework 4.8，缺失时需先安装。应用暂无自动更新；下载校验、升级与卸载方法见 [Windows 使用说明](docs/WINDOWS.md)。
+程序和安装器尚未代码签名，Windows 可能显示 SmartScreen 提示；请核对下载来源和 SHA-256 校验值。安装器会检查 .NET Framework 4.8，缺失时需先安装。从 v0.1.5 起，可在托盘或设置中点击“检查更新”，确认后下载并运行新版安装包；下载校验、升级与卸载方法见 [Windows 使用说明](docs/WINDOWS.md)。
 
 ## 快捷键与操作
 
@@ -52,9 +52,17 @@ Screenline 受 [Tendedero](https://github.com/alejandrobujan/tendedero) 启发�
 
 当其他应用占用快捷键时，会提示从托盘操作。全屏时默认抑制自动展开，手动快捷键和托盘入口仍可用。
 
+## 应用内检查更新
+
+从托盘菜单或设置点击 **检查更新**，应用会从本项目的 GitHub Releases 查询最新正式版本，显示当前版本和最新版本，并提供版本说明链接。有更新时可主动下载安装包；下载完成后，应用先比对同一 Release 的 `SHA256SUMS.txt`，校验通过后才提供运行入口。
+
+安装前请先保存设置和标注。点击 **退出并安装** 会打开 Windows 安装向导，并退出 Screenline，让安装器更新程序文件。安装器仍由你确认安装；升级保留本地图片与设置。便携版也可以使用该入口，但会转为安装版；继续使用便携版可到 Release 页面下载 ZIP。检查失败、网络受限或校验失败时，可以重试或在浏览器中打开 Release 页面，应用不会运行未通过校验的文件。
+
+更新检查仅在手动点击时联网，不在启动时检查、不在后台自动下载或静默安装。程序和安装器尚未代码签名，SHA-256 校验用于确认下载文件与 Release 附件一致。
+
 ## 本地数据与隐私
 
-应用没有网络请求、账户和统计。图片、设置、日志存放在 `%LOCALAPPDATA%\Screenline`；导入时建立自己的副本，不修改或删除外部源文件。
+应用没有账户和统计。只有主动检查更新、下载更新时，才向 GitHub 及其下载服务发起 HTTPS 请求，请求携带应用版本信息，不上传图片、剪贴板、设置或日志。图片、设置、日志存放在 `%LOCALAPPDATA%\Screenline`；导入时建立自己的副本，不修改或删除外部源文件。
 
 移出晾台只更新可恢复记录，**不会释放图片占用的磁盘空间，也不会自动送进 Windows 回收站**。托盘“打开本地图库”可查看图片文件。需要清理时先退出程序，再备份或整理该目录；自行删除后，相应图片将无法恢复。
 
@@ -69,7 +77,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Test
 ```
 
-第一条命令构建根目录的 `Screenline.exe`，第二条重新构建并运行自检。脚本使用 Windows 的 .NET Framework C# 编译器，不下载依赖。命令中的执行策略仅作用于本次 PowerShell 进程，不会永久更改系统策略。
+第一条命令构建根目录的 `Screenline.exe`，第二条重新构建并运行自检。默认版本从根目录的 `VERSION` 读取；发布构建可加 `-Version vX.Y.Z`，该版本会写入程序元数据，供应用内更新比较使用。脚本使用 Windows 的 .NET Framework C# 编译器，不下载依赖。命令中的执行策略仅作用于本次 PowerShell 进程，不会永久更改系统策略。
 
 源码位于 [`src`](src)，兼容 C# 5。也可以使用安装了 .NET Framework 桌面开发工具的 Visual Studio 打开 [`Screenline.csproj`](Screenline.csproj)。
 
@@ -77,7 +85,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Test
 
 ## 自动构建与发布
 
-向 GitHub 推送 `vX.Y.Z` 版本标签后，[Windows Release 工作流](.github/workflows/release.yml) 会在 Windows runner 上构建程序、执行 `build.ps1 -Test -ClipboardTest`，并生成安装器、便携程序、对应标签源码及 `SHA256SUMS.txt`。除默认自检外，CI 还会实际验证剪贴板占用后的复制恢复、图片与文件格式及退出后的粘贴。随后在隔离目录静默安装和重复安装，运行安装后的程序自检，检查快捷方式、卸载注册信息及卸载结果。只有构建、自检、安装卸载检查、打包与附件上传均成功，才会公开 Release。已有的正式发布不会被覆盖。
+向 GitHub 推送 `vX.Y.Z` 版本标签后，[Windows Release 工作流](.github/workflows/release.yml) 会在 Windows runner 上按标签写入程序版本、执行 `build.ps1 -Version vX.Y.Z -Test -ClipboardTest`，并生成安装器、便携程序、对应标签源码及 `SHA256SUMS.txt`。除默认自检外，CI 还会实际验证剪贴板占用后的复制恢复、图片与文件格式及退出后的粘贴。随后在隔离目录静默安装和重复安装，运行安装后的程序自检，检查快捷方式、卸载注册信息及卸载结果。只有构建、自检、安装卸载检查、打包与附件上传均成功，才会公开 Release。已有的正式发布不会被覆盖。
 
 也可以在仓库的 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 页面手动运行工作流；手动运行同样构建、自检、生成并验证安装器及保存产物，不创建 Release。无需额外配置 GitHub Secrets。标签发布步骤、本地安装包构建与失败重试方法见 [维护者发布说明](docs/RELEASING.md)。
 

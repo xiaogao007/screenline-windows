@@ -13,6 +13,7 @@ namespace Screenline
         private readonly TextBlock status;
         internal AppSettings Result { get; private set; }
         internal bool StartupEnabled { get { return startup.IsChecked == true; } }
+        internal event Action UpdatesRequested;
 
         internal SettingsWindow(AppSettings settings, bool startupEnabled, string dataRoot)
         {
@@ -49,6 +50,10 @@ namespace Screenline
             panel.Children.Add(new TextBlock { Text = "本地图库", FontSize = 15, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 20, 0, 8) });
             panel.Children.Add(Note(dataRoot));
             panel.Children.Add(Note("图片仅保存在本机。移出晾台可撤销，外部源文件始终保留。"));
+            panel.Children.Add(new TextBlock { Text = "版本与更新", FontSize = 15, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 20, 0, 8) });
+            panel.Children.Add(Note("当前版本 " + AppVersion.Current + " · 仅在点击检查更新后连接 GitHub。"));
+            var updates = Theme.Button("检查更新…", false); updates.HorizontalAlignment = HorizontalAlignment.Left; updates.Margin = new Thickness(0, 8, 0, 0);
+            updates.Click += delegate { if (UpdatesRequested != null) UpdatesRequested(); }; panel.Children.Add(updates);
             Content = outer;
         }
         private CheckBox Check(string text, bool value) { return new CheckBox { Content = text, IsChecked = value, Margin = new Thickness(0, 14, 0, 0), FontSize = 14 }; }
