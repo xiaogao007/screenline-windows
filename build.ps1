@@ -1,4 +1,4 @@
-param([switch]$Test)
+param([switch]$Test, [switch]$ClipboardTest)
 $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
 $frameworkPath = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319'
@@ -16,4 +16,10 @@ if ($Test) {
     $process = Start-Process -FilePath (Join-Path $projectRoot 'Screenline.exe') -ArgumentList @('--self-test',('"' + $testOutputPath + '"')) -Wait -PassThru -WindowStyle Hidden
     Get-Content -LiteralPath (Join-Path $testOutputPath 'report.txt')
     if ($process.ExitCode -ne 0) { throw 'Self tests failed.' }
+}
+if ($ClipboardTest) {
+    $clipboardOutputPath = Join-Path $projectRoot 'tests\clipboard-results'
+    $process = Start-Process -FilePath (Join-Path $projectRoot 'Screenline.exe') -ArgumentList @('--clipboard-test',('"' + $clipboardOutputPath + '"')) -Wait -PassThru -WindowStyle Hidden
+    Get-Content -LiteralPath (Join-Path $clipboardOutputPath 'report.txt')
+    if ($process.ExitCode -ne 0) { throw 'Clipboard integration tests failed.' }
 }

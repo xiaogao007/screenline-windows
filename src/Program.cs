@@ -20,6 +20,9 @@ namespace Screenline
         {
             Native.SetProcessDPIAware();
             if (args.Length > 0 && args[0] == "--self-test") return Verification.Run(args.Length > 1 ? args[1] : Path.Combine(Path.GetTempPath(), "Screenline-tests"));
+            if (args.Length > 0 && args[0] == "--clipboard-test") return ClipboardVerification.Run(args.Length > 1 ? args[1] : Path.Combine(Path.GetTempPath(), "Screenline-clipboard-tests"));
+            if (args.Length == 3 && args[0] == "--hold-clipboard") return ClipboardVerification.Hold(args[1], args[2]);
+            if (args.Length == 2 && args[0] == "--write-clipboard-fixture") return ClipboardVerification.WriteFixture(args[1]);
             bool first;
             using (var mutex = new Mutex(true, "Local\\Screenline.Desktop.1", out first))
             {
@@ -60,6 +63,7 @@ namespace Screenline
         private string startupStatus;
         private bool busy, disposed;
         private System.Drawing.Icon trayIcon;
+        private CancellationTokenSource copyCancellation;
 
         internal AppController(Application application)
         {
@@ -149,15 +153,29 @@ namespace Screenline
             if ((now - leaveSince).TotalMilliseconds > 650) shelf.Conceal();
         }
         private void Report(string text) { shelf.SetStatus(text); }
-        private void Copy(ShotItem item)
+        private async void Copy(ShotItem item)
         {
+            if (disposed) return;
+            var request = new CancellationTokenSource();
+            if (copyCancellation != null) copyCancellation.Cancel();
+            copyCancellation = request;
             try {
                 var image = PreviewWindow.LoadImage(item.FilePath, 0);
-                var data = new DataObject(); data.SetImage(image);
-                var files = new StringCollection(); files.Add(item.FilePath); data.SetFileDropList(files);
-                data.SetData(CaptureSources.SelfClipboardFormat, "1");
-                Clipboard.SetDataObject(data, true); shelf.SetStatus("已复制图片");
-            } catch (Exception ex) { Report("复制失败，请重试：" + ex.Message); }
+                Report("正在复制图片…");
+                await ImageClipboardWriter.CopyAsync(image, item.FilePath, messageWindow.Handle, request.Token);
+                if (!disposed && Object.ReferenceEquals(copyCancellation, request)) Report("已复制图片");
+            }
+            catch (OperationCanceledException) { }
+            catch (ClipboardBusyException) {
+                if (!disposed && Object.ReferenceEquals(copyCancellation, request)) Report("剪贴板正被其他程序占用，请稍后再试。");
+            }
+            catch (Exception ex) {
+                if (!disposed && Object.ReferenceEquals(copyCancellation, request)) { Report("复制失败：" + ex.Message); AppLog.Write(ex); }
+            }
+            finally {
+                if (Object.ReferenceEquals(copyCancellation, request)) copyCancellation = null;
+                request.Dispose();
+            }
         }
         private void Paste()
         {
@@ -244,6 +262,7 @@ namespace Screenline
         public void Dispose()
         {
             if (disposed) return; disposed = true;
+            if (copyCancellation != null) copyCancellation.Cancel();
             timer.Stop(); sources.Dispose(); Native.UnregisterHotKey(messageWindow.Handle, 1); Native.UnregisterHotKey(messageWindow.Handle, 2); messageWindow.Dispose();
             tray.Visible = false; tray.Dispose(); trayIcon.Dispose(); shelf.Close();
         }

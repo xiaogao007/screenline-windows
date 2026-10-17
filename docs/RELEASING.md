@@ -19,8 +19,9 @@ git push origin v0.1.4
 
 ## 工作流执行内容
 
-- 检出标签对应的源码，在 `windows-2022` runner 上运行 `build.ps1 -Test`；编译或自检失败即停止后续发布。
-- 使用固定版本的 Inno Setup 6.7.1 编译 Windows x64 安装器；从本次构建生成便携 ZIP，并从同一标签打包源码 ZIP。
+- 检出标签对应的源码，在 `windows-2022` runner 上运行 `build.ps1 -Test -ClipboardTest`；编译或检查失败即停止后续发布。
+- 默认自检保持不改动系统剪贴板；额外的 `-ClipboardTest` 使用合成图片实际写入 runner 剪贴板，验证跨进程占用、异步恢复、取消、外部内容保护及格式持久性，报告保存在 `tests/clipboard-results`。
+- 使用 runner 预装的 Inno Setup 6.7 或更新版本编译 Windows x64 安装器；从本次构建生成便携 ZIP，并从同一标签打包源码 ZIP。
 - 在隔离目录执行真实的静默安装及重复安装，运行已安装程序的自检，并检查快捷方式、Windows 卸载注册信息与卸载结果；同时检查卸载保留用户数据和其他便携副本的登录启动项。
 - 为安装 EXE 和两个 ZIP 生成 `SHA256SUMS.txt`；将发布产物、自检结果和安装器检查结果保存在该次 Actions 的 artifacts 中，便于排查。
 - 创建草稿 Release、上传全部附件，成功后才公开发布。已有的正式发布会导致发布任务失败，避免覆盖用户已经下载的版本。

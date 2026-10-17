@@ -3,6 +3,7 @@ obj/
 *.user
 tests/results/
 tests/installer-results/
+tests/clipboard-results/
 tests/desktop-smoke.txt
 tests/design-lint.json
 tests/premium-audit.json

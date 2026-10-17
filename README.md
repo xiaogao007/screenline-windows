@@ -77,7 +77,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Test
 
 ## 自动构建与发布
 
-向 GitHub 推送 `vX.Y.Z` 版本标签后，[Windows Release 工作流](.github/workflows/release.yml) 会在 Windows runner 上构建程序、执行 `build.ps1 -Test` 自检，并生成安装器、便携程序、对应标签源码及 `SHA256SUMS.txt`。随后在隔离目录静默安装和重复安装，运行安装后的程序自检，检查快捷方式、卸载注册信息及卸载结果。只有构建、自检、安装卸载检查、打包与附件上传均成功，才会公开 Release。已有的正式发布不会被覆盖。
+向 GitHub 推送 `vX.Y.Z` 版本标签后，[Windows Release 工作流](.github/workflows/release.yml) 会在 Windows runner 上构建程序、执行 `build.ps1 -Test -ClipboardTest`，并生成安装器、便携程序、对应标签源码及 `SHA256SUMS.txt`。除默认自检外，CI 还会实际验证剪贴板占用后的复制恢复、图片与文件格式及退出后的粘贴。随后在隔离目录静默安装和重复安装，运行安装后的程序自检，检查快捷方式、卸载注册信息及卸载结果。只有构建、自检、安装卸载检查、打包与附件上传均成功，才会公开 Release。已有的正式发布不会被覆盖。
 
 也可以在仓库的 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 页面手动运行工作流；手动运行同样构建、自检、生成并验证安装器及保存产物，不创建 Release。无需额外配置 GitHub Secrets。标签发布步骤、本地安装包构建与失败重试方法见 [维护者发布说明](docs/RELEASING.md)。
 

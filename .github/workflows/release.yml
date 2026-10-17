@@ -44,7 +44,7 @@ jobs:
 
       - name: Build and run native self-tests
         timeout-minutes: 3
-        run: .\build.ps1 -Test
+        run: .\build.ps1 -Test -ClipboardTest
 
       - name: Package tested binaries and exact source
         id: package
@@ -76,6 +76,7 @@ jobs:
           path: |
             tests/results/report.txt
             tests/results/*.png
+            tests/clipboard-results/**/*.txt
             tests/installer-results/**/*.txt
             tests/installer-results/**/*.log
           if-no-files-found: warn
