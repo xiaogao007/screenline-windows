@@ -69,7 +69,7 @@ namespace Screenline
             AutomationProperties.SetName(status, "更新状态"); AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
             body.Children.Add(status);
             Content = outer;
-            SetState("Idle", "检查 GitHub 最新正式版本", "点击检查更新后连接 GitHub。下载完成后，可选择退出应用并打开安装向导。", "");
+            SetState("Idle", "检查最新正式版本", "点击检查更新后连接发布服务器。下载完成后，可选择退出应用并打开安装向导。", "");
             Loaded += async delegate { if (autoCheck && State == "Idle") await CheckForUpdatesAsync(); close.Focus(); };
             Closed += delegate {
                 closed = true;
@@ -117,13 +117,13 @@ namespace Screenline
             if (closed || operation != null) return;
             var request = new CancellationTokenSource(); operation = request;
             update = null; installerPath = null;
-            SetState("Checking", "正在检查更新…", "正在从 GitHub Release 获取最新正式版本。", "可取消检查；不会上传截图、文件夹或设置。");
+            SetState("Checking", "正在检查更新…", "正在获取最新正式版本。", "可取消检查；不会上传截图、文件夹或设置。");
             try {
                 var result = await service.CheckAsync(currentVersion, request.Token);
                 if (closed) return;
                 update = result;
                 if (result == null)
-                    SetState("Current", "当前已是最新版本", "当前版本 " + currentVersion + "，暂未发现更新的正式版本。", "稍后可再次检查，或查看 GitHub 版本说明。");
+                    SetState("Current", "当前已是最新版本", "当前版本 " + currentVersion + "，暂未发现更新的正式版本。", "稍后可再次检查，或查看版本说明。");
                 else
                     SetState("Available", "发现新版本 " + result.Version, ReleaseDetails(result), "下载安装包后会先校验文件。只有点击“退出并安装”才会启动安装。");
             }
@@ -193,10 +193,43 @@ namespace Screenline
         private void OpenReleasePage(object sender, RoutedEventArgs e)
         {
             try {
+                if (update != null && !String.IsNullOrEmpty(update.ReleaseNotes)) {
+                    ShowReleaseNotes(update.Version, update.ReleaseNotes);
+                    return;
+                }
                 string url = update == null ? "https://github.com/xiaogao007/screenline-windows/releases/latest" : update.ReleaseUri.AbsoluteUri;
                 Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             }
-            catch (Exception) { status.Text = "无法打开浏览器。请稍后重试，或前往 GitHub 的 screenline-windows 仓库查看 Release。"; }
+            catch (Exception) { status.Text = "无法打开版本说明。请稍后重试，或前往项目 Release 页面查看。"; }
+        }
+
+        private void ShowReleaseNotes(string version, string text)
+        {
+            CreateReleaseNotesWindow(version, text).ShowDialog();
+        }
+
+        internal Window CreateReleaseNotesWindow(string version, string text)
+        {
+            var window = new Window {
+                Title = "截图晾台 · " + version + " 版本说明", Owner = this,
+                Width = 590, Height = 470, MinWidth = 440, MinHeight = 320,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = Theme.Surface, Foreground = Theme.Foreground, FontFamily = Theme.Font
+            };
+            var panel = new DockPanel { Margin = new Thickness(28) };
+            var done = Theme.Button("关闭版本说明", false);
+            done.HorizontalAlignment = HorizontalAlignment.Right; done.Margin = new Thickness(0, 16, 0, 0);
+            done.IsCancel = true; done.IsDefault = true; done.Click += delegate { window.Close(); };
+            DockPanel.SetDock(done, Dock.Bottom); panel.Children.Add(done);
+            var notes = new TextBox {
+                Text = text, IsReadOnly = true, TextWrapping = TextWrapping.Wrap,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto, BorderThickness = new Thickness(0),
+                Background = Theme.Surface, Foreground = Theme.Foreground, FontFamily = Theme.Font, FontSize = 14
+            };
+            AutomationProperties.SetName(notes, "版本说明正文");
+            panel.Children.Add(notes); window.Content = panel;
+            window.Loaded += delegate { done.Focus(); };
+            return window;
         }
 
         private static string FriendlyError(Exception exception)

@@ -51,7 +51,7 @@ namespace Screenline
             panel.Children.Add(Note(dataRoot));
             panel.Children.Add(Note("图片仅保存在本机。移出晾台可撤销，外部源文件始终保留。"));
             panel.Children.Add(new TextBlock { Text = "版本与更新", FontSize = 15, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 20, 0, 8) });
-            panel.Children.Add(Note("当前版本 " + AppVersion.Current + " · 检查更新时会连接 GitHub。"));
+            panel.Children.Add(Note("当前版本 " + AppVersion.Current + " · 检查更新时会连接 GitHub 或维护者配置的国内更新源。"));
             startupUpdates = Check("启动时检查更新", settings.CheckUpdatesOnStartup); panel.Children.Add(startupUpdates);
             panel.Children.Add(Note("开启并保存后，从下次启动起每次检查一次；有新版仅提醒，下载和安装需你确认。"));
             var updates = Theme.Button("检查更新…", false); updates.HorizontalAlignment = HorizontalAlignment.Left; updates.Margin = new Thickness(0, 8, 0, 0);

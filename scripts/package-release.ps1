@@ -39,6 +39,7 @@ if ($outputRoot.Contains("`r") -or $outputRoot.Contains("`n")) {
 $portableFiles = @(
     'Screenline.exe',
     'Screenline.exe.config',
+    'update-source.json',
     'README.md',
     'LICENSE',
     'THIRD-PARTY-NOTICES.txt',

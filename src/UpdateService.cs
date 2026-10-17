@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.Serialization;
@@ -26,9 +27,11 @@ namespace Screenline
         public string InstallerName { get; private set; }
         public long InstallerSize { get; private set; }
         public string InstallerDigest { get; internal set; }
+        public string ReleaseNotes { get; private set; }
         internal Uri InstallerUri { get; private set; }
         internal Uri ChecksumsUri { get; private set; }
         internal string ApiDigest { get; private set; }
+        internal Uri MirrorBaseUri { get; private set; }
 
         internal ReleaseUpdate(string tag, Uri releaseUri, string installerName, long installerSize,
             Uri installerUri, Uri checksumsUri, string apiDigest)
@@ -42,6 +45,15 @@ namespace Screenline
             ChecksumsUri = checksumsUri;
             ApiDigest = apiDigest;
         }
+
+        internal ReleaseUpdate(string tag, string installerName, long installerSize, string digest, string notes, UpdateSource source)
+            : this(tag, new Uri("https://github.com/xiaogao007/screenline-windows/releases/tag/" + tag),
+                installerName, installerSize, source.InstallerUri(tag, installerName), null, null)
+        {
+            MirrorBaseUri = source.BaseUri;
+            InstallerDigest = digest;
+            ReleaseNotes = notes;
+        }
     }
 
     // Updates are user-initiated. This class only retrieves and verifies release files;
@@ -51,26 +63,36 @@ namespace Screenline
         internal const long MaximumInstallerBytes = 256L * 1024L * 1024L;
         private const int MaximumMetadataBytes = 1024 * 1024;
         private const int MaximumChecksumsBytes = 64 * 1024;
+        private const int MaximumMirrorMetadataBytes = 128 * 1024;
+        private const int MaximumMirrorPayloadBytes = 64 * 1024;
         private const string RepositoryPath = "/xiaogao007/screenline-windows";
         private const string LatestReleaseUrl = "https://api.github.com/repos" + RepositoryPath + "/releases/latest";
         private static readonly Regex HashPattern = new Regex("^[a-fA-F0-9]{64}\\z", RegexOptions.CultureInvariant);
         private static readonly Regex ChecksumLinePattern = new Regex("^([a-fA-F0-9]{64})[ \\t]+\\*?([^\\r\\n]+)\\z", RegexOptions.CultureInvariant);
         private readonly HttpClient client;
         private readonly string updatesRoot;
+        private readonly UpdateSource source;
 
         public UpdateService()
             : this(new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false },
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Screenline", "Updates"))
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Screenline", "Updates"),
+                UpdateSource.LoadOptional(AppDomain.CurrentDomain.BaseDirectory))
         {
         }
 
         // The injected handler and root let the self-test exercise the entire download
         // lifecycle without network access or touching the user's picture library.
         internal UpdateService(HttpMessageHandler handler, string updatesRoot)
+            : this(handler, updatesRoot, null)
+        {
+        }
+
+        internal UpdateService(HttpMessageHandler handler, string updatesRoot, UpdateSource source)
         {
             if (handler == null) throw new ArgumentNullException("handler");
             if (String.IsNullOrWhiteSpace(updatesRoot)) throw new ArgumentException("An update directory is required.", "updatesRoot");
             this.updatesRoot = Path.GetFullPath(updatesRoot);
+            this.source = source;
             client = new HttpClient(handler, true);
             client.Timeout = Timeout.InfiniteTimeSpan;
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Screenline-Windows/" + AppVersion.Current);
@@ -84,8 +106,31 @@ namespace Screenline
                 deadline.CancelAfter(TimeSpan.FromSeconds(30));
                 try
                 {
-                    // Validate the local version before contacting GitHub.
+                    // A signed domestic source is optional. Its failure cannot replace
+                    // a valid GitHub update, and an explicit cancellation never falls back.
                     SemanticVersion.Parse(currentVersion);
+                    if (source != null)
+                    {
+                        using (var mirrorDeadline = CancellationTokenSource.CreateLinkedTokenSource(deadline.Token))
+                        {
+                            mirrorDeadline.CancelAfter(TimeSpan.FromSeconds(8));
+                            try
+                            {
+                                string mirrorJson = await GetTextAsync(source.LatestUri, MaximumMirrorMetadataBytes, false,
+                                    source.BaseUri, mirrorDeadline.Token).ConfigureAwait(false);
+                                ReleaseUpdate mirrorRelease = ParseMirrorRelease(mirrorJson, currentVersion, source);
+                                mirrorDeadline.Token.ThrowIfCancellationRequested();
+                                return mirrorRelease;
+                            }
+                            catch (OperationCanceledException) { deadline.Token.ThrowIfCancellationRequested(); }
+                            catch (UpdateException) { deadline.Token.ThrowIfCancellationRequested(); }
+                            catch (Exception ex)
+                            {
+                                deadline.Token.ThrowIfCancellationRequested();
+                                if (!IsTransferError(ex) && !(ex is CryptographicException)) throw;
+                            }
+                        }
+                    }
                     string json = await GetTextAsync(new Uri(LatestReleaseUrl), MaximumMetadataBytes, true, deadline.Token).ConfigureAwait(false);
                     if (json == null) return null; // No public stable release yet (HTTP 404).
                     ReleaseUpdate release = ParseLatestRelease(json, currentVersion);
@@ -116,6 +161,8 @@ namespace Screenline
         {
             cancellationToken.ThrowIfCancellationRequested();
             ValidateReleaseForDownload(release);
+            if (release.MirrorBaseUri != null && (source == null || !UpdateSource.SameUri(release.MirrorBaseUri, source.BaseUri)))
+                throw new UpdateException("安装包不属于已配置的国内更新源，请重新检查更新。");
             string directory = null;
             string partialPath = null;
             string finalPath = null;
@@ -132,7 +179,7 @@ namespace Screenline
                     finalPath = Path.Combine(directory, release.InstallerName);
                     partialPath = finalPath + ".partial";
                     if (progress != null) progress.Report(0);
-                    using (HttpResponseMessage response = await GetResponseAsync(release.InstallerUri, false, deadline.Token).ConfigureAwait(false))
+                    using (HttpResponseMessage response = await GetResponseAsync(release.InstallerUri, false, release.MirrorBaseUri, deadline.Token).ConfigureAwait(false))
                     {
                         long? advertised = response.Content.Headers.ContentLength;
                         if (advertised.HasValue && advertised.Value != release.InstallerSize)
@@ -228,20 +275,35 @@ namespace Screenline
         {
             if (release == null || release.InstallerSize < 2 || release.InstallerSize > MaximumInstallerBytes ||
                 release.InstallerDigest == null || !HashPattern.IsMatch(release.InstallerDigest) ||
-                release.InstallerName != InstallerFileName(release.Tag) ||
-                !IsReleaseAssetUri(release.InstallerUri, release.Tag, release.InstallerName) ||
+                release.InstallerName != InstallerFileName(release.Tag))
+                throw new UpdateException("更新信息不完整，请重新检查更新。");
+            if (release.MirrorBaseUri != null)
+            {
+                SemanticVersion version = SemanticVersion.Parse(release.Tag);
+                if (!release.Tag.StartsWith("v", StringComparison.Ordinal) || version.PreRelease.Length != 0 ||
+                    !UpdateSource.IsAllowedUri(release.InstallerUri, release.MirrorBaseUri) ||
+                    !UpdateSource.SameUri(release.InstallerUri, new Uri(release.MirrorBaseUri, "releases/" + release.Tag + "/" + release.InstallerName)) ||
+                    release.ChecksumsUri != null)
+                    throw new UpdateException("国内更新安装包地址无效，请重新检查更新。");
+            }
+            else if (!IsReleaseAssetUri(release.InstallerUri, release.Tag, release.InstallerName) ||
                 !IsReleaseAssetUri(release.ChecksumsUri, release.Tag, "SHA256SUMS.txt"))
                 throw new UpdateException("更新信息不完整，请重新检查更新。");
         }
 
         private async Task<string> GetTextAsync(Uri uri, int maximumBytes, bool latestApi, CancellationToken token)
         {
-            using (HttpResponseMessage response = await GetResponseAsync(uri, latestApi, token).ConfigureAwait(false))
+            return await GetTextAsync(uri, maximumBytes, latestApi, null, token).ConfigureAwait(false);
+        }
+
+        private async Task<string> GetTextAsync(Uri uri, int maximumBytes, bool latestApi, Uri mirrorBaseUri, CancellationToken token)
+        {
+            using (HttpResponseMessage response = await GetResponseAsync(uri, latestApi, mirrorBaseUri, token).ConfigureAwait(false))
             {
                 if (response.StatusCode == HttpStatusCode.NotFound && latestApi) return null;
                 long? length = response.Content.Headers.ContentLength;
                 if (length.HasValue && (length.Value < 0 || length.Value > maximumBytes))
-                    throw new UpdateException("GitHub 返回的更新信息过大，请稍后重试。");
+                    throw new UpdateException("更新源返回的信息过大，请稍后重试。");
                 using (token.Register(delegate { response.Dispose(); }))
                 using (Stream input = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var output = new MemoryStream())
@@ -252,23 +314,32 @@ namespace Screenline
                         int read = await input.ReadAsync(buffer, 0, buffer.Length, token).ConfigureAwait(false);
                         if (read == 0) break;
                         if (output.Length + read > maximumBytes)
-                            throw new UpdateException("GitHub 返回的更新信息过大，请稍后重试。");
+                            throw new UpdateException("更新源返回的信息过大，请稍后重试。");
                         output.Write(buffer, 0, read);
                     }
                     try { return new UTF8Encoding(false, true).GetString(output.ToArray()).TrimStart('\uFEFF'); }
-                    catch (DecoderFallbackException) { throw new UpdateException("GitHub 返回的更新信息无法读取，请稍后重试。"); }
+                    catch (DecoderFallbackException) { throw new UpdateException("更新源返回的信息无法读取，请稍后重试。"); }
                 }
             }
         }
 
         private async Task<HttpResponseMessage> GetResponseAsync(Uri initialUri, bool latestApi, CancellationToken token)
         {
+            return await GetResponseAsync(initialUri, latestApi, null, token).ConfigureAwait(false);
+        }
+
+        private async Task<HttpResponseMessage> GetResponseAsync(Uri initialUri, bool latestApi, Uri mirrorBaseUri, CancellationToken token)
+        {
             Uri uri = initialUri;
             for (int redirects = 0; redirects <= 5; redirects++)
             {
                 token.ThrowIfCancellationRequested();
-                bool permitted = latestApi ? String.Equals(uri.AbsoluteUri, LatestReleaseUrl, StringComparison.Ordinal) : ValidateDownloadUri(uri);
-                if (!latestApi && String.Equals(uri.DnsSafeHost, "github.com", StringComparison.OrdinalIgnoreCase) &&
+                bool permitted = mirrorBaseUri != null ? UpdateSource.IsAllowedUri(uri, mirrorBaseUri) :
+                    (latestApi ? String.Equals(uri.AbsoluteUri, LatestReleaseUrl, StringComparison.Ordinal) : ValidateDownloadUri(uri));
+                // The manifest signs one exact object path. An OSS/CDN redirect
+                // must not silently select a different object under the same base.
+                if (mirrorBaseUri != null && !UpdateSource.SameUri(uri, initialUri)) permitted = false;
+                if (mirrorBaseUri == null && !latestApi && String.Equals(uri.DnsSafeHost, "github.com", StringComparison.OrdinalIgnoreCase) &&
                     !String.Equals(Uri.UnescapeDataString(uri.AbsoluteUri), Uri.UnescapeDataString(initialUri.AbsoluteUri), StringComparison.Ordinal)) permitted = false;
                 if (!permitted) throw new UpdateException("更新下载地址不受信任，已停止连接。");
                 HttpResponseMessage response;
@@ -286,18 +357,18 @@ namespace Screenline
                 {
                     Uri location = response.Headers.Location;
                     response.Dispose();
-                    if (location == null || redirects == 5) throw new UpdateException("GitHub 下载重定向异常，请稍后重试。");
+                    if (location == null || redirects == 5) throw new UpdateException("更新下载重定向异常，请稍后重试。");
                     uri = location.IsAbsoluteUri ? location : new Uri(uri, location);
                     continue;
                 }
                 if (response.IsSuccessStatusCode || (latestApi && response.StatusCode == HttpStatusCode.NotFound)) return response;
                 response.Dispose();
                 if (status == 403 || status == 429)
-                    throw new UpdateException("GitHub 暂时限制了更新请求，请稍后重试，或前往 Release 页面下载。");
+                    throw new UpdateException("更新源暂时限制了请求，请稍后重试，或前往 Release 页面下载。");
                 if (status == 404) throw new UpdateException("此版本的安装包暂时不可用，请稍后重试或查看 Release 页面。");
-                throw new UpdateException("GitHub 暂时无法提供更新（HTTP " + status + "），请稍后重试。");
+                throw new UpdateException("更新源暂时无法提供文件（HTTP " + status + "），请稍后重试。");
             }
-            throw new UpdateException("GitHub 下载重定向异常，请稍后重试。");
+            throw new UpdateException("更新下载重定向异常，请稍后重试。");
         }
 
         internal static bool ValidateDownloadUri(Uri uri)
@@ -346,6 +417,47 @@ namespace Screenline
         internal static int CompareVersions(string left, string right)
         {
             return SemanticVersion.Parse(left).CompareTo(SemanticVersion.Parse(right));
+        }
+
+        internal static ReleaseUpdate ParseMirrorRelease(string json, string currentVersion, UpdateSource source)
+        {
+            if (source == null) throw new ArgumentNullException("source");
+            SemanticVersion current = SemanticVersion.Parse(currentVersion);
+            Dictionary<string, string> envelope = UpdateSource.ReadFlatObject(json, MaximumMirrorMetadataBytes,
+                new string[] { "payload", "signature" }, new string[] { "string", "string" }, true);
+            byte[] payload, signature;
+            try
+            {
+                if (envelope["payload"].Length > ((MaximumMirrorPayloadBytes + 2) / 3) * 4 || envelope["signature"].Length > 2048)
+                    throw new UpdateException("国内更新信息大小无效。");
+                payload = Convert.FromBase64String(envelope["payload"]);
+                signature = Convert.FromBase64String(envelope["signature"]);
+            }
+            catch (FormatException) { throw new UpdateException("国内更新信息签名格式无效。"); }
+            if (payload.Length == 0 || payload.Length > MaximumMirrorPayloadBytes || !source.VerifySignature(payload, signature))
+                throw new UpdateException("国内更新信息签名验证失败。");
+            string text;
+            try { text = new UTF8Encoding(false, true).GetString(payload); }
+            catch (DecoderFallbackException) { throw new UpdateException("国内更新信息编码无效。"); }
+            Dictionary<string, string> fields = UpdateSource.ReadFlatObject(text, MaximumMirrorPayloadBytes,
+                new string[] { "schema", "tag", "installer", "size", "sha256", "notes" },
+                new string[] { "number", "string", "string", "number", "string", "string" }, true);
+            long size;
+            string tag = fields["tag"];
+            SemanticVersion version = SemanticVersion.Parse(tag);
+            if (fields["schema"] != "1" || !tag.StartsWith("v", StringComparison.Ordinal) || version.PreRelease.Length != 0 ||
+                fields["installer"] != InstallerFileName(tag) ||
+                !Int64.TryParse(fields["size"], NumberStyles.None, CultureInfo.InvariantCulture, out size) ||
+                size < 2 || size > MaximumInstallerBytes || !HashPattern.IsMatch(fields["sha256"]) ||
+                fields["notes"].Length > 16 * 1024)
+                throw new UpdateException("国内更新发布信息不完整。");
+            foreach (char character in fields["notes"])
+                if (Char.IsControl(character) && character != '\r' && character != '\n' && character != '\t')
+                    throw new UpdateException("国内更新版本说明格式无效。");
+            // A valid signed manifest is authoritative even when no newer version
+            // exists; avoid contacting GitHub unnecessarily for domestic users.
+            if (version.CompareTo(current) <= 0) return null;
+            return new ReleaseUpdate(tag, fields["installer"], size, fields["sha256"].ToLowerInvariant(), fields["notes"], source);
         }
 
         internal static ReleaseUpdate ParseLatestRelease(string json, string currentVersion)

@@ -76,6 +76,7 @@ Name: "desktopicon"; Description: "{cm:DesktopShortcut}"; GroupDescription: "{cm
 ; Keep this allowlist aligned with the portable package. Never include build or user data.
 Source: "{#SourceRoot}\Screenline.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceRoot}\Screenline.exe.config"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceRoot}\update-source.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceRoot}\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceRoot}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceRoot}\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion

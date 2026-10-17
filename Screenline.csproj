@@ -29,5 +29,8 @@
   <Target Name="GenerateScreenlineVersion" BeforeTargets="CoreCompile">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\build.ps1&quot; -Version &quot;$(Version)&quot; -WriteVersionOnly" />
   </Target>
+  <Target Name="CopyScreenlineUpdateConfiguration" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\update-source.json" DestinationFolder="$(TargetDir)" />
+  </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

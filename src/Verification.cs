@@ -33,6 +33,7 @@ namespace Screenline
                 ServiceVerification.Run(sandbox, Check);
                 StartupUpdateVerification.Run(Check);
                 UpdateVerification.Run(sandbox, Check);
+                UpdateSourceVerification.Run(sandbox, Check);
                 Check(CaptureMath.Region(new Point(50, 50), new Point(-50, -20), 100, 100, 200, 200) == new Int32Rect(0, 0, 100, 100), "Crop clamps negative pointer outside selection window");
                 Check(CaptureMath.Region(new Point(90, 90), new Point(120, 140), 100, 100, 100, 100) == new Int32Rect(90, 90, 10, 10), "Crop clamps right and bottom edges");
                 Check(CaptureMath.Region(new Point(0, 0), new Point(100, 100), 100, 100, 150, 150) == new Int32Rect(0, 0, 150, 150), "Crop preserves scale at 150% DPI");

@@ -24,6 +24,8 @@ Source brief: user requested a Windows recreation of https://github.com/alejandr
 
 ## Flow ledger
 
+Optional domestic distribution is owned by UpdateSource plus UpdateService. An adjacent generated update-source.json contains only an approved HTTPS base URL and RSA public key. Signed metadata binds version, exact installer name, size, SHA-256 and plain-text notes. The application verifies the signature before interpreting the payload, derives paths beneath that approved base, and retains the existing download checks and user confirmation. Metadata failure falls back to GitHub; a valid no-update response does not. Installer transfer failure offers retry without switching its source automatically. Missing or invalid deployment configuration retains GitHub behavior. No cloud credential or private signing key is distributed. Deployment remains disabled until the maintainer configures and verifies OSS; see docs/OSS-SETUP.md.
+
 | Action | Result | Failure and recovery |
 |---|---|---|
 | Single click or Enter/Space on image | Copy full bitmap and managed file reference; keep item | Shelf status says retry if clipboard is busy |

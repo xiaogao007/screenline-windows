@@ -168,7 +168,7 @@ try {
     # Ownership is set before launch so a partially failed setup is also cleaned up.
     $ownedInstallation = $true
     Invoke-TestProcess $installer $installArguments 'Silent installation'
-    foreach ($fileName in @('Screenline.exe', 'Screenline.exe.config', 'LICENSE', 'README.md', 'THIRD-PARTY-NOTICES.txt')) {
+    foreach ($fileName in @('Screenline.exe', 'Screenline.exe.config', 'update-source.json', 'LICENSE', 'README.md', 'THIRD-PARTY-NOTICES.txt')) {
         Assert-Check (Test-Path -LiteralPath (Join-Path $installDirectory $fileName) -PathType Leaf) ('Installed payload contains ' + $fileName)
     }
     Assert-Check ((Get-Content -LiteralPath (Join-Path $installDirectory 'LICENSE') -Raw) -match 'MIT License') 'Installed license can be read'
@@ -241,7 +241,7 @@ try {
     Invoke-TestProcess $uninstallerPath @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART',
         ('/LOG="' + (Join-Path $outputRoot 'uninstall.log') + '"')) 'Silent uninstall'
     Wait-ForUninstall
-    foreach ($fileName in @('Screenline.exe', 'Screenline.exe.config', 'LICENSE', 'README.md', 'THIRD-PARTY-NOTICES.txt', 'unins000.exe')) {
+    foreach ($fileName in @('Screenline.exe', 'Screenline.exe.config', 'update-source.json', 'LICENSE', 'README.md', 'THIRD-PARTY-NOTICES.txt', 'unins000.exe')) {
         Assert-Check (!(Test-Path -LiteralPath (Join-Path $installDirectory $fileName))) ('Uninstall removes ' + $fileName)
     }
     foreach ($view in @([Microsoft.Win32.RegistryView]::Registry64, [Microsoft.Win32.RegistryView]::Registry32)) {

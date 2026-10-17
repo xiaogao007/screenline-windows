@@ -46,7 +46,22 @@ jobs:
         timeout-minutes: 3
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
-        run: .\build.ps1 -Version $env:RELEASE_TAG -Test -ClipboardTest
+          OSS_MIRROR_ENABLED: ${{ vars.OSS_MIRROR_ENABLED }}
+          SCREENLINE_UPDATE_BASE_URL: ${{ vars.OSS_MIRROR_ENABLED == 'true' && vars.SCREENLINE_UPDATE_BASE_URL || '' }}
+          SCREENLINE_UPDATE_PUBLIC_KEY: ${{ vars.OSS_MIRROR_ENABLED == 'true' && vars.SCREENLINE_UPDATE_PUBLIC_KEY || '' }}
+        run: |
+          if ($env:OSS_MIRROR_ENABLED -eq 'true' -and
+              ([string]::IsNullOrWhiteSpace($env:SCREENLINE_UPDATE_BASE_URL) -or [string]::IsNullOrWhiteSpace($env:SCREENLINE_UPDATE_PUBLIC_KEY))) {
+            throw 'Enabled OSS mirror requires both public client update source variables.'
+          }
+          .\build.ps1 -Version $env:RELEASE_TAG -Test -ClipboardTest
+
+      - name: Test signed update configuration and mirror publication failures offline
+        timeout-minutes: 2
+        run: |
+          .\scripts\test-update-publishing.ps1
+          python .\scripts\test-oss-publish.py
+          if ($LASTEXITCODE -ne 0) { throw 'Offline OSS publication tests failed.' }
 
       - name: Package tested binaries and exact source
         id: package
@@ -114,3 +129,75 @@ jobs:
           RELEASE_TAG: ${{ needs.build.outputs.tag }}
           BUILD_COMMIT: ${{ needs.build.outputs.commit }}
         run: .\scripts\publish-release.ps1 -Tag $env:RELEASE_TAG -Commit $env:BUILD_COMMIT -ArtifactDirectory dist
+
+  oss-mirror:
+    name: Publish optional signed domestic mirror
+    needs: [build, release]
+    if: needs.release.result == 'success' && needs.build.outputs.prerelease == 'false' && vars.OSS_MIRROR_ENABLED == 'true'
+    runs-on: windows-2022
+    timeout-minutes: 20
+    # Serialize stable latest pointer changes across distinct version-tag runs.
+    concurrency:
+      group: screenline-oss-stable
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        shell: powershell
+    env:
+      OSS_BUCKET: ${{ vars.OSS_BUCKET }}
+      OSS_REGION: ${{ vars.OSS_REGION }}
+      SCREENLINE_UPDATE_BASE_URL: ${{ vars.SCREENLINE_UPDATE_BASE_URL }}
+      SCREENLINE_UPDATE_PUBLIC_KEY: ${{ vars.SCREENLINE_UPDATE_PUBLIC_KEY }}
+    steps:
+      - name: Check out matching publishing scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate optional mirror configuration
+        env:
+          ALIYUN_ROLE_ARN: ${{ vars.ALIYUN_ROLE_ARN }}
+          ALIYUN_OIDC_PROVIDER_ARN: ${{ vars.ALIYUN_OIDC_PROVIDER_ARN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($name in @('OSS_BUCKET', 'OSS_REGION', 'SCREENLINE_UPDATE_BASE_URL', 'SCREENLINE_UPDATE_PUBLIC_KEY', 'ALIYUN_ROLE_ARN', 'ALIYUN_OIDC_PROVIDER_ARN')) {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { throw "Missing mirror variable: $name" }
+          }
+          .\scripts\write-update-source.ps1 -OutputPath "$env:RUNNER_TEMP\screenline-update-source.json"
+
+      - name: Download tested published bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: screenline-release-${{ github.run_id }}
+          path: dist
+
+      - name: Sign stable update manifest
+        env:
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+          UPDATE_SIGNING_PRIVATE_KEY_XML: ${{ secrets.UPDATE_SIGNING_PRIVATE_KEY_XML }}
+        run: .\scripts\new-update-manifest.ps1 -Tag $env:RELEASE_TAG -ArtifactDirectory dist -OutputPath "$env:RUNNER_TEMP\screenline-latest.json"
+
+      - name: Install pinned official OSS SDK in an isolated environment
+        run: |
+          python -m venv "$env:RUNNER_TEMP\screenline-oss-sdk"
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to create OSS SDK environment.' }
+          & "$env:RUNNER_TEMP\screenline-oss-sdk\Scripts\python.exe" -m pip install --disable-pip-version-check -r .\scripts\oss-requirements.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to install the pinned OSS SDK.' }
+          & "$env:RUNNER_TEMP\screenline-oss-sdk\Scripts\python.exe" .\scripts\publish-oss-release.py --artifact-directory dist --manifest "$env:RUNNER_TEMP\screenline-latest.json" --verify-only
+          if ($LASTEXITCODE -ne 0) { throw 'Signed local bundle verification failed.' }
+
+      - name: Obtain short-lived Alibaba Cloud credentials via GitHub OIDC
+        uses: aliyun/configure-aliyun-credentials-action@1e5248c8d5d93a8781ac344a68e19a43341e79e6 # v1; official Alibaba Cloud action
+        with:
+          role-to-assume: ${{ vars.ALIYUN_ROLE_ARN }}
+          oidc-provider-arn: ${{ vars.ALIYUN_OIDC_PROVIDER_ARN }}
+          audience: sts.aliyuncs.com
+          role-session-expiration: 1800
+
+      - name: Upload and verify version assets, then update signed latest pointer
+        run: |
+          & "$env:RUNNER_TEMP\screenline-oss-sdk\Scripts\python.exe" .\scripts\publish-oss-release.py --artifact-directory dist --manifest "$env:RUNNER_TEMP\screenline-latest.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Domestic mirror failed; the published GitHub Release remains available.' }

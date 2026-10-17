@@ -43,7 +43,7 @@ foreach ($path in @($projectRoot, $outputRoot)) {
 }
 
 $payloadFiles = @(
-    'Screenline.exe', 'Screenline.exe.config', 'README.md', 'LICENSE',
+    'Screenline.exe', 'Screenline.exe.config', 'update-source.json', 'README.md', 'LICENSE',
     'THIRD-PARTY-NOTICES.txt', 'CHANGELOG.md', 'docs/WINDOWS.md', 'docs/MIGRATION.md',
     'docs/images/shelf-preview.png', 'docs/images/shelf-empty.png',
     'installer/Screenline.iss', 'installer/Languages/ChineseSimplified.isl'

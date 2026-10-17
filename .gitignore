@@ -9,3 +9,7 @@ tests/design-lint.json
 tests/premium-audit.json
 Screenline.exe
 dist/
+update-source.json
+*.private.xml
+*.key
+__pycache__/

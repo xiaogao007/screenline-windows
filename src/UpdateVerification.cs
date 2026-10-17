@@ -303,6 +303,14 @@ namespace Screenline
                     Pump(window.CheckForUpdatesAsync());
                     check(window.State == "Available" && FindButton(window, "下载 Windows 安装包") != null && launches == 0,
                         "A newer release presents the installer download action without starting a download or process");
+                    const string localNotes = "国内更新说明\n保留截图与设置。\n<文字按纯文本显示，不运行脚本>";
+                    var notesWindow = window.CreateReleaseNotesWindow("0.1.7", localNotes);
+                    notesWindow.Show(); notesWindow.UpdateLayout();
+                    var notesText = Descendants<TextBox>(notesWindow).Single();
+                    check(notesWindow.Owner == window && notesText.IsReadOnly && notesText.Text == localNotes &&
+                        AutomationProperties.GetName(notesText) == "版本说明正文" && FindButton(notesWindow, "关闭版本说明") != null,
+                        "Domestic release notes are readable and copyable as local plain text without opening GitHub or executing markup");
+                    Render(notesWindow, Path.Combine(destination, "update-notes-preview.png")); notesWindow.Close();
                     check(Descendants<TextBlock>(window).Any(delegate(TextBlock text) {
                         return AutomationProperties.GetName(text) == "更新状态" &&
                             AutomationProperties.GetLiveSetting(text) == AutomationLiveSetting.Polite;
