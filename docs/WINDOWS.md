@@ -4,23 +4,29 @@
 
 ## 安装与首次运行
 
-从仓库的 [最新 Release](https://github.com/xiaogao007/screenline-windows/releases/latest) 下载 Windows x64 ZIP，完整解压后双击 `Screenline.exe`。不要直接在压缩包内运行。请保留同目录中的 `Screenline.exe.config`；程序使用 .NET Framework 4.8。
+从仓库的 [最新 Release](https://github.com/xiaogao007/screenline-windows/releases/latest) 下载 `Screenline-vX.Y.Z-windows-x64-setup.exe`，将 `vX.Y.Z` 替换为实际版本号。安装版从 v0.1.3 起提供，支持简体中文和 English 安装界面。
+
+安装器默认将程序安装到当前用户的 `%LOCALAPPDATA%\Programs\Screenline`，不需要管理员权限。安装时可选择目录，并可取消默认勾选的“创建桌面快捷方式”；安装器还会创建开始菜单入口和 Windows“已安装的应用 / 应用和功能”中的卸载入口。
+
+也可以下载 `Screenline-vX.Y.Z-windows-x64.zip` 使用便携版：完整解压后双击 `Screenline.exe`，不要直接在压缩包内运行。请保留同目录中的 `Screenline.exe.config`。两种版本均使用 .NET Framework 4.8；安装器会检查此前提，未安装时需先补齐后再运行安装器。
 
 应用常驻系统托盘，不会一直在任务栏显示主窗口。托盘图标可能被 Windows 收进“显示隐藏的图标”区域。右键图标可截图、导入图片、粘贴剪贴板图片、打开设置、本地图库或退出。
 
-首次运行可能出现 Windows SmartScreen 提示：当前程序尚未代码签名。请先核对下载来源及 Release 附带的 SHA-256 校验值，依据系统提示和自己的安全判断决定是否运行；也可以自行审查并构建源码。项目不提供证书或已签名安装包。
+首次运行可能出现 Windows SmartScreen 提示：当前程序和安装器尚未代码签名。请先核对下载来源及 Release 附带的 SHA-256 校验值，依据系统提示和自己的安全判断决定是否运行；也可以自行审查并构建源码。项目不提供证书或已签名安装包。
 
 ## 校验下载文件
 
-在 PowerShell 中计算下载 ZIP 的 SHA-256，并与同一 Release 公布的校验值逐字比对：
+在 PowerShell 中计算下载文件的 SHA-256，并与同一 Release 公布的校验值逐字比对。例如校验安装包：
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath .\Screenline-vX.Y.Z-windows-x64.zip
+Get-FileHash -Algorithm SHA256 -LiteralPath .\Screenline-vX.Y.Z-windows-x64-setup.exe
 ```
 
-将 `vX.Y.Z` 替换为实际版本号，并与同一 Release 中 `SHA256SUMS.txt` 对应文件的值比较。校验值不同或来源不明时，请重新从仓库的 Release 下载。
+将 `vX.Y.Z` 替换为实际版本号，并与同一 Release 中 `SHA256SUMS.txt` 对应文件的值比较。校验便携包或源码包时，将路径换成相应 ZIP 文件。v0.1.3 起的校验文件包含安装包、便携包和源码包三项；校验值不同或来源不明时，请重新从仓库的 Release 下载。
 
 从 v0.1.2 起，标签发布由 GitHub Actions 在 Windows runner 上构建，并通过项目自检后生成下载附件。可以在 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 查看对应标签的执行记录；自检覆盖范围见 [README](../README.md#从源码构建)。自检无法代替所有显示器配置和桌面交互的实机验证。
+
+从 v0.1.3 起，工作流还会检查静默安装、重复安装、安装后程序自检、快捷方式、Windows 卸载注册信息和卸载结果；检查通过后才发布附件。
 
 ## 日常使用
 
@@ -69,11 +75,19 @@ Get-FileHash -Algorithm SHA256 -LiteralPath .\Screenline-vX.Y.Z-windows-x64.zip
 
 ### 如何升级、备份或卸载
 
-升级前从托盘退出程序，备份 `%LOCALAPPDATA%\Screenline`，然后将新 Release 完整解压到固定位置。应用没有自动更新。
+应用没有自动更新。升级前先从托盘退出 Screenline，并备份 `%LOCALAPPDATA%\Screenline`。
+
+**安装版升级：** 运行新版 `Screenline-vX.Y.Z-windows-x64-setup.exe`，安装器沿用同一应用标识和已有安装目录，更新程序文件；图片、设置及索引保留在 `%LOCALAPPDATA%\Screenline`。卸载或升级时如提示程序仍在运行，请先从托盘退出后再继续。
+
+**便携版升级：** 将新 Release 的便携 ZIP 完整解压到固定位置，保留新版本附带的配置文件。便携版和安装版使用同一当前用户数据目录；从便携版切换到安装版时，请先退出便携版，并在新安装的应用中检查登录启动设置。
 
 备份 `%LOCALAPPDATA%\Screenline` 可保留图片、设置及索引。移动程序后，如之前开启了“登录 Windows 后启动”，请在新位置运行后取消该选项并保存，再重新勾选并保存。
 
-卸载时先在设置中关闭“登录 Windows 后启动”并保存，再从托盘退出，删除解压的程序文件夹即可。本地数据会继续保留；确认已备份后，可自行删除 `%LOCALAPPDATA%\Screenline`。
+**安装版卸载：** 从托盘退出程序后，在 Windows“设置 → 应用 → 已安装的应用 / 应用和功能”中找到 Screenline 并卸载，也可使用开始菜单的卸载入口。卸载器会移除已安装的程序文件、快捷方式和卸载注册信息；只有登录启动项指向本次安装的程序时才移除该启动项，不会删除指向其他便携副本的启动项。
+
+**便携版卸载：** 先在设置中关闭“登录 Windows 后启动”并保存，再从托盘退出，删除解压的程序文件夹即可。
+
+两种卸载方式均会保留 `%LOCALAPPDATA%\Screenline` 中的图片、设置及索引。若需要彻底清理，确认已备份且不再使用其他 Screenline 副本后，再自行删除此数据目录。
 
 ## 反馈问题
 

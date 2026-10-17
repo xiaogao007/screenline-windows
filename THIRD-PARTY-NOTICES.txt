@@ -43,3 +43,11 @@ You may build and use the app as published, and you may refer to Tendedero
 to say where your work comes from. Modified or redistributed versions must
 use a different name and a different icon, and must not suggest that they
 are Tendedero or are endorsed by its author.
+Inno Setup installer and Simplified Chinese messages
+--------------------------------------------------
+The Windows installer is built using Inno Setup (https://jrsoftware.org/).
+The unmodified user-contributed ChineseSimplified.isl translation is vendored
+from jrsoftware/issrc tag is-6_7_1, commit
+cfdf48923178df4b4f040e038b423aa555a61ffc. Its original comments are retained.
+The upstream Inno Setup license is included in the source repository at
+installer/INNO-LICENSE.txt. Screenline's MIT license does not replace that license.

@@ -20,21 +20,23 @@ if (![IO.Path]::IsPathRooted($ArtifactDirectory)) { $ArtifactDirectory = Join-Pa
 $artifactRoot = (Resolve-Path -LiteralPath $ArtifactDirectory).Path
 $portableName = "Screenline-$Tag-windows-x64.zip"
 $sourceName = "Screenline-$Tag-source.zip"
-$assetNames = @($portableName, $sourceName, 'SHA256SUMS.txt')
+$installerName = "Screenline-$Tag-windows-x64-setup.exe"
+$packageNames = @($portableName, $sourceName, $installerName)
+$assetNames = $packageNames + @('SHA256SUMS.txt')
 $notesPath = Join-Path $artifactRoot 'release-notes.md'
 foreach ($name in $assetNames + @('release-notes.md')) {
     if (!(Test-Path -LiteralPath (Join-Path $artifactRoot $name) -PathType Leaf)) { throw "Missing release file: $name" }
 }
 
-# Check exactly the two expected ZIPs before any GitHub mutation.
+# Check both ZIPs and the installer before any GitHub mutation.
 $checksumLines = @(Get-Content -LiteralPath (Join-Path $artifactRoot 'SHA256SUMS.txt') -Encoding UTF8 | Where-Object { ![string]::IsNullOrWhiteSpace($_) })
-if ($checksumLines.Count -ne 2) { throw 'Expected exactly two ZIP checksum records.' }
+if ($checksumLines.Count -ne $packageNames.Count) { throw 'Expected exactly three package checksum records, including the installer.' }
 $verifiedNames = @{}
 foreach ($line in $checksumLines) {
     if ($line -cnotmatch '^([0-9a-fA-F]{64})  ([^/\\]+)$') { throw 'Invalid checksum record.' }
     $expectedHash = $Matches[1]
     $name = $Matches[2]
-    if ($name -cnotin @($portableName, $sourceName) -or $verifiedNames.ContainsKey($name)) { throw 'Unexpected or duplicate checksum filename.' }
+    if ($name -cnotin $packageNames -or $verifiedNames.ContainsKey($name)) { throw 'Unexpected or duplicate checksum filename.' }
     $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $artifactRoot $name)).Hash
     if ($actualHash -ine $expectedHash) { throw "Checksum mismatch: $name" }
     $verifiedNames[$name] = $true

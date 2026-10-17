@@ -2,7 +2,8 @@
 param(
     [Parameter(Mandatory = $true)]
     [string]$Tag,
-    [string]$OutputDirectory = 'dist'
+    [string]$OutputDirectory = 'dist',
+    [string]$IsccPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -86,8 +87,10 @@ if ($LASTEXITCODE -ne 0 -or $sourceChanges.Count -gt 0) {
 [System.IO.Directory]::CreateDirectory($outputRoot) | Out-Null
 $portableName = 'Screenline-' + $Tag + '-windows-x64.zip'
 $sourceName = 'Screenline-' + $Tag + '-source.zip'
+$installerName = 'Screenline-' + $Tag + '-windows-x64-setup.exe'
 $portablePath = Join-Path $outputRoot $portableName
 $sourcePath = Join-Path $outputRoot $sourceName
+$installerPath = Join-Path $outputRoot $installerName
 $checksumsPath = Join-Path $outputRoot 'SHA256SUMS.txt'
 $notesPath = Join-Path $outputRoot 'release-notes.md'
 
@@ -127,7 +130,10 @@ $archiveArguments = @('-C', $projectRoot, 'archive', '--format=zip',
 & git @archiveArguments
 if ($LASTEXITCODE -ne 0) { throw 'git archive failed; release packaging is incomplete.' }
 
-$checksumLines = foreach ($archivePath in @($portablePath, $sourcePath)) {
+& (Join-Path $PSScriptRoot 'build-installer.ps1') -Tag $Tag -OutputDirectory $outputRoot -IsccPath $IsccPath
+if (!(Test-Path -LiteralPath $installerPath -PathType Leaf)) { throw 'Installer packaging did not produce the expected EXE.' }
+
+$checksumLines = foreach ($archivePath in @($portablePath, $sourcePath, $installerPath)) {
     $hash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
     $hash + '  ' + [System.IO.Path]::GetFileName($archivePath)
 }
@@ -154,11 +160,12 @@ Windows 原生截图晾台：区域截图、顶部图片卡片、导入与自动
 
 ## 下载与运行
 
+- **$installerName**：Windows x64 安装版，支持可选桌面快捷方式、开始菜单和系统卸载。默认安装到当前用户目录，卸载保留截图及设置。
 - **$portableName**：Windows 10 / 11 x64 便携程序。完整解压后运行 ``Screenline/Screenline.exe``，保留相邻的 ``Screenline.exe.config``。
 - **$sourceName**：本次发布对应提交的完整源码与中文文档。
-- **SHA256SUMS.txt**：以上两个 ZIP 文件的 SHA-256 校验值。
+- **SHA256SUMS.txt**：安装程序和以上两个 ZIP 文件的 SHA-256 校验值。
 
-需要 .NET Framework 4.8。程序未代码签名，尚无安装器或应用内自动更新。录屏和视频裁剪尚未实现。
+需要 .NET Framework 4.8。程序和安装包尚未代码签名，没有应用内自动更新。录屏和视频裁剪尚未实现。
 
 ``Ctrl + Alt + T`` 展开或收起；``Ctrl + Alt + S`` 区域截图。图片保存在本机；剪贴板后台监听与登录启动默认关闭。
 
@@ -173,7 +180,7 @@ $releaseNotes += @"
 - 版本标签：``$Tag``
 - 源码提交：[$commit]($repositoryUrl/commit/$commit)
 - 自检：**$passCount 项通过，0 项失败**（来自本次构建的 ``tests/results/report.txt``）。
-- 发布附件：``$portableName``、``$sourceName``、``SHA256SUMS.txt``。
+- 发布附件：``$installerName``、``$portableName``、``$sourceName``、``SHA256SUMS.txt``。
 "@
 [System.IO.File]::WriteAllText($notesPath, ($releaseNotes.TrimEnd() + "`n"), $utf8)
 
@@ -184,6 +191,7 @@ $outputs = [ordered]@{
     'prerelease' = $prerelease
     'portable' = $portablePath
     'source' = $sourcePath
+    'installer' = $installerPath
     'checksums' = $checksumsPath
     'notes' = $notesPath
     'artifact-dir' = $outputRoot
@@ -195,5 +203,6 @@ if (![string]::IsNullOrWhiteSpace($env:GITHUB_OUTPUT)) {
 Write-Output ('Packaged ' + $Tag + ' from ' + $commit + '; self-tests passed: ' + $passCount)
 Write-Output ('Portable: ' + $portablePath)
 Write-Output ('Source: ' + $sourcePath)
+Write-Output ('Installer: ' + $installerPath)
 Write-Output ('Checksums: ' + $checksumsPath)
 Write-Output ('Release notes: ' + $notesPath)

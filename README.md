@@ -10,14 +10,22 @@ Screenline 受 [Tendedero](https://github.com/alejandrobujan/tendedero) 启发�
 
 ## 下载与运行
 
-1. 打开 [Releases](https://github.com/xiaogao007/screenline-windows/releases/latest)，在 **Assets** 中下载 **Screenline-vX.Y.Z-windows-x64.zip**，其中 `X.Y.Z` 为该版本号。`Screenline-vX.Y.Z-source.zip` 和 GitHub 自动生成的 `Source code` 压缩包仅含源码。
-2. 将 ZIP **完整解压**到一个固定文件夹，保留 `Screenline.exe` 旁边的 `Screenline.exe.config`。
-3. 双击 **Screenline.exe**。应用出现在系统托盘，首次展开后会自动收起。
-4. 按 **Ctrl + Alt + T**，或将鼠标停在显示器顶边约 350 ms，即可展开晾台。右键托盘图标可打开设置或退出。
+打开 [Releases](https://github.com/xiaogao007/screenline-windows/releases/latest)，在 **Assets** 中选择下载，`vX.Y.Z` 为实际版本号：
+
+| 文件 | 用途 |
+|---|---|
+| **Screenline-vX.Y.Z-windows-x64-setup.exe** | 安装版：创建开始菜单入口，可选桌面快捷方式，支持 Windows 设置卸载 |
+| **Screenline-vX.Y.Z-windows-x64.zip** | 便携版：完整解压后运行 `Screenline.exe`，保留相邻的 `Screenline.exe.config` |
+| `Screenline-vX.Y.Z-source.zip` | 对应版本源码与文档，不含可运行程序 |
+| `SHA256SUMS.txt` | 安装包、便携包和源码包的 SHA-256 校验值 |
+
+安装版从 **v0.1.3** 起提供。运行安装器，选择简体中文或 English，按向导安装。默认安装到当前用户的 `%LOCALAPPDATA%\Programs\Screenline`，不需要管理员权限；默认勾选创建桌面快捷方式，可在安装时取消。也可以继续使用便携版。
+
+启动后，应用出现在系统托盘，首次展开后会自动收起。按 **Ctrl + Alt + T**，或将鼠标停在显示器顶边约 350 ms，即可展开晾台。右键托盘图标可打开设置或退出。
 
 需要 **.NET Framework 4.8**；Windows 11 已内置，较新的 Windows 10 通常也已安装。运行程序不需要 Node、Python、.NET SDK 或管理员权限。
 
-程序尚未代码签名，未提供安装器或自动更新。下载校验、运行问题与升级方法见 [Windows 使用说明](docs/WINDOWS.md)。
+程序和安装器尚未代码签名，Windows 可能显示 SmartScreen 提示；请核对下载来源和 SHA-256 校验值。安装器会检查 .NET Framework 4.8，缺失时需先安装。应用暂无自动更新；下载校验、升级与卸载方法见 [Windows 使用说明](docs/WINDOWS.md)。
 
 ## 快捷键与操作
 
@@ -69,9 +77,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Test
 
 ## 自动构建与发布
 
-向 GitHub 推送 `vX.Y.Z` 版本标签后，[Windows Release 工作流](.github/workflows/release.yml) 会在 Windows runner 上构建程序、执行 `build.ps1 -Test` 自检，并打包便携程序、对应标签源码及 `SHA256SUMS.txt`。只有构建、自检、打包与附件上传均成功，才会公开 Release。已有的正式发布不会被覆盖。
+向 GitHub 推送 `vX.Y.Z` 版本标签后，[Windows Release 工作流](.github/workflows/release.yml) 会在 Windows runner 上构建程序、执行 `build.ps1 -Test` 自检，并生成安装器、便携程序、对应标签源码及 `SHA256SUMS.txt`。随后在隔离目录静默安装和重复安装，运行安装后的程序自检，检查快捷方式、卸载注册信息及卸载结果。只有构建、自检、安装卸载检查、打包与附件上传均成功，才会公开 Release。已有的正式发布不会被覆盖。
 
-也可以在仓库的 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 页面手动运行工作流；手动运行仅构建、自检并保存产物，不创建 Release。标签发布步骤、权限与失败重试方法见 [维护者发布说明](docs/RELEASING.md)。
+也可以在仓库的 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 页面手动运行工作流；手动运行同样构建、自检、生成并验证安装器及保存产物，不创建 Release。无需额外配置 GitHub Secrets。标签发布步骤、本地安装包构建与失败重试方法见 [维护者发布说明](docs/RELEASING.md)。
 
 ## 当前范围与限制
 

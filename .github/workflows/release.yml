@@ -52,6 +52,13 @@ jobs:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: .\scripts\package-release.ps1 -Tag $env:RELEASE_TAG
 
+      - name: Test installer, shortcuts, repair and uninstall
+        timeout-minutes: 6
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          INSTALLER_PATH: ${{ steps.package.outputs.installer }}
+        run: .\scripts\test-installer.ps1 -InstallerPath $env:INSTALLER_PATH -Tag $env:RELEASE_TAG
+
       - name: Upload release bundle
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -69,6 +76,8 @@ jobs:
           path: |
             tests/results/report.txt
             tests/results/*.png
+            tests/installer-results/**/*.txt
+            tests/installer-results/**/*.log
           if-no-files-found: warn
           retention-days: 14
           overwrite: true

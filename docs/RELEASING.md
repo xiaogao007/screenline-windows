@@ -1,18 +1,18 @@
 # 维护者发布说明
 
-仓库通过 [Windows Release 工作流](../.github/workflows/release.yml) 自动发布 Windows 10 / 11 x64 便携版。推送符合 `v*.*.*` 的版本标签会触发工作流，例如 `v0.1.3`；手动运行仅构建、自检和打包，不发布 Release。也支持 `v1.0.0-rc.1` 这类预发布版本标签，发布时会标记为 GitHub prerelease。
+仓库通过 [Windows Release 工作流](../.github/workflows/release.yml) 自动发布 Windows 10 / 11 x64 安装版与便携版。推送符合 `v*.*.*` 的版本标签会触发工作流，例如 `v0.1.4`；手动运行完成相同的构建、测试和打包，但不发布 Release。也支持 `v1.0.0-rc.1` 这类预发布版本标签，发布时会标记为 GitHub prerelease。
 
 ## 发布新版本
 
 1. 更新源码、`CHANGELOG.md` 及相关中文文档，并将改动提交、合并到 `main`。
-2. 如需自定义该版本的 Release 正文，将中文说明保存为 `docs/RELEASE-v0.1.3.md` 并一并提交。没有该文件时，工作流生成包含下载、自检与使用说明的正文。
-3. 在包含工作流与上述改动的提交上创建并推送新标签。以下以 `v0.1.3` 为例：
+2. 如需自定义该版本的 Release 正文，将中文说明保存为 `docs/RELEASE-vX.Y.Z.md` 并一并提交。没有该文件时，工作流生成包含下载、自检与使用说明的正文。v0.1.3 的说明已包含在仓库中。
+3. 在包含工作流与上述改动的提交上创建并推送新标签。以下以之后的 `v0.1.4` 为例：
 
 ```powershell
 git switch main
 git pull --ff-only origin main
-git tag v0.1.3
-git push origin v0.1.3
+git tag v0.1.4
+git push origin v0.1.4
 ```
 
 请使用尚未发布的新版本号。工作流必须已经存在于标签指向的提交中；仅把工作流提交到 `main`，再推送指向旧提交的标签，不会为旧提交补上工作流。
@@ -20,32 +20,59 @@ git push origin v0.1.3
 ## 工作流执行内容
 
 - 检出标签对应的源码，在 `windows-2022` runner 上运行 `build.ps1 -Test`；编译或自检失败即停止后续发布。
-- 从本次构建生成 Windows x64 便携 ZIP，并从同一标签打包源码 ZIP。
-- 为两个 ZIP 生成 `SHA256SUMS.txt`；将发布产物和自检结果保存在该次 Actions 的 artifacts 中，便于排查。
+- 使用固定版本的 Inno Setup 6.7.1 编译 Windows x64 安装器；从本次构建生成便携 ZIP，并从同一标签打包源码 ZIP。
+- 在隔离目录执行真实的静默安装及重复安装，运行已安装程序的自检，并检查快捷方式、Windows 卸载注册信息与卸载结果；同时检查卸载保留用户数据和其他便携副本的登录启动项。
+- 为安装 EXE 和两个 ZIP 生成 `SHA256SUMS.txt`；将发布产物、自检结果和安装器检查结果保存在该次 Actions 的 artifacts 中，便于排查。
 - 创建草稿 Release、上传全部附件，成功后才公开发布。已有的正式发布会导致发布任务失败，避免覆盖用户已经下载的版本。
 
 每个正式版本包含以下附件，`vX.Y.Z` 为具体标签：
 
 | 文件 | 用途 |
 |---|---|
+| `Screenline-vX.Y.Z-windows-x64-setup.exe` | 当前用户安装器，支持桌面 / 开始菜单快捷方式和卸载 |
 | `Screenline-vX.Y.Z-windows-x64.zip` | 可运行的 Windows 便携程序及使用文档 |
 | `Screenline-vX.Y.Z-source.zip` | 对应标签的完整已跟踪源码和文档 |
-| `SHA256SUMS.txt` | 上述两个 ZIP 的 SHA-256 校验值 |
+| `SHA256SUMS.txt` | 安装 EXE 和上述两个 ZIP 的 SHA-256 校验值 |
+
+安装器从 v0.1.3 起提供；已有 v0.1.2 及更早 Release 保持原有附件。安装器按当前用户安装，默认目录为 `%LOCALAPPDATA%\Programs\Screenline`，不需要管理员权限。其应用标识保持稳定，后续版本可沿用已有目录升级；用户图片与设置在 `%LOCALAPPDATA%\Screenline`，不随卸载删除。
 
 工作流使用仓库提供的 `GITHUB_TOKEN`，无需配置额外 secret。只有发布 job 申请 `contents: write` 权限，构建 job 保持只读。仓库需允许 GitHub Actions 运行；如组织策略禁止写入 Release，需要仓库管理员调整对应 Actions 权限或策略。
 
 ## 手动验证构建
 
-打开 [Actions](https://github.com/xiaogao007/screenline-windows/actions)，选择 **Windows Release**，点击 **Run workflow** 并选择要验证的分支或标签。手动触发会运行相同的构建、自检和打包步骤，并保存 artifacts；不会创建或修改 Release。
+打开 [Actions](https://github.com/xiaogao007/screenline-windows/actions)，选择 **Windows Release**，点击 **Run workflow** 并选择要验证的分支或标签。手动触发会运行相同的构建、自检、安装器构建与安装卸载检查、打包步骤，并保存 artifacts；不会创建或修改 Release。
 
 这种运行适合在推送版本标签前检查 `main`。Artifacts 需在登录 GitHub 后从运行详情页下载，并受 GitHub 保留期限限制；对外下载请使用正式 Release 的附件。
 
+## 本地构建安装包
+
+在 Windows x64 上准备 .NET Framework 4.8 和 Inno Setup 6.7.1。安装器脚本使用仓库内的简体中文翻译文件，无需另行下载语言文件。程序、安装器均尚未代码签名；CI 不需要签名证书或额外 GitHub Secrets。
+
+先构建并通过自检，再生成安装包：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Test
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Tag v0.1.3
+```
+
+脚本会查找 Inno Setup 编译器；如果编译器不在默认位置，可通过 `-IsccPath 'C:\path\to\ISCC.exe'` 参数或 `ISCC_PATH` 环境变量指定。生成的安装文件名为 `Screenline-v0.1.3-windows-x64-setup.exe`。
+
+准备完整发布附件时，先提交全部发布源码、保持工作区干净，再运行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Tag v0.1.3
+```
+
+`package-release.ps1` 会调用安装器构建脚本，并生成安装包、便携包、对应当前提交的源码包、校验文件和 Release 正文，默认输出到 `dist`。此脚本同样支持 `-IsccPath` 和 `ISCC_PATH`。打包需要刚构建程序的成功自检报告；源码 ZIP 通过 `git archive` 生成，包含已提交文件，不包含被忽略的二进制和测试产物。发布标签应指向这份源码提交，GitHub 工作流会据此检出并构建。
+
+本地生成附件不会自动发布到 GitHub。正式发布请使用上面的标签流程，让工作流执行安装卸载检查后发布。
+
 ## 失败处理
 
-先打开对应 Actions 运行，检查失败步骤和自检报告。编译、自检、打包或附件上传失败时，工作流不会公开新 Release；附件上传中断可能留下草稿。
+先打开对应 Actions 运行，检查失败步骤、自检报告和安装器检查日志。编译、自检、安装卸载检查、打包或附件上传失败时，工作流不会公开新 Release；附件上传中断可能留下草稿。
 
 - 临时 runner 或网络问题：在失败运行中选择 **Re-run failed jobs** 或 **Re-run all jobs**。草稿可由重试继续处理。
 - 源码、工作流或文档需要修改：将修复提交到 `main`，使用新的版本标签发布，不移动已有正式版本的标签。
 - 目标版本已经正式发布：工作流拒绝覆盖。请增加版本号后重新发布。
 
-成功状态表示编译、项目自检、打包及 GitHub 发布步骤完成。它不代表混合 DPI、所有多显示器组合或游戏独占全屏均经过实机验证；这些限制仍见 [Windows 使用说明](WINDOWS.md)。
+成功状态表示编译、项目自检、安装卸载检查、打包及 GitHub 发布步骤完成。安装器的无人值守检查不代替所有 Windows 语言与桌面环境下的交互检查；混合 DPI、多显示器组合及游戏独占全屏的实机验证限制仍见 [Windows 使用说明](WINDOWS.md)。

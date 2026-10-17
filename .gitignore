@@ -2,6 +2,7 @@ bin/
 obj/
 *.user
 tests/results/
+tests/installer-results/
 tests/desktop-smoke.txt
 tests/design-lint.json
 tests/premium-audit.json
