@@ -176,15 +176,27 @@ export async function fetchVerifiedRelease({ fetcher = globalThis.fetch, cryptoP
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   const options = { signal: controller.signal, cache: "no-store", credentials: "omit", redirect: "error" };
+  let stage = "fetch";
   try {
-    const get = async (path, maximum) => readBoundedResponse(await fetcher(new URL(path, baseUrl), options), maximum);
+    const get = async (path, maximum) => {
+      try { return await readBoundedResponse(await fetcher(new URL(path, baseUrl), options), maximum); }
+      catch (error) {
+        if (error && Object.isExtensible(error)) error.releaseStage = path.includes("latest.json") ? "fetch-manifest" : "fetch-key";
+        throw error;
+      }
+    };
     const [envelope, keyBytes] = await Promise.all([
       get("./releases/latest.json", MAX_ENVELOPE), get("./release-key.json", MAX_KEY),
     ]);
+    stage = "parse-key";
     const jwk = parseFlatObject(decoder.decode(keyBytes));
+    stage = "verify";
     const manifest = await verifyReleaseEnvelope(envelope, jwk, cryptoProvider);
     if (controller.signal.aborted) reject("network");
     return manifest;
+  } catch (error) {
+    if (error && Object.isExtensible(error) && !error.releaseStage) error.releaseStage = stage;
+    throw error;
   } finally {
     clearTimeout(timer);
     controller.abort();
@@ -214,12 +226,16 @@ export function initReleaseClient(documentRoot = globalThis.document, load = fet
     retry.disabled = true;
     retry.hidden = true;
     status.dataset.state = "loading";
+    delete status.dataset.error;
+    delete status.dataset.errorStage;
     status.textContent = "正在获取版本信息并校验发布签名…";
     notes.textContent = "校验通过后，这里会显示对应版本的更新说明。";
     setText(documentRoot, '[data-release="version"]', "版本查询中");
     setText(documentRoot, '[data-release="size"]', "大小待确认");
+    let stage = "load";
     try {
       const manifest = await load();
+      stage = "render";
       const links = releaseLinks(manifest);
       anchors.forEach((anchor) => {
         if (!Object.hasOwn(links, anchor.dataset.download)) return;
@@ -233,6 +249,14 @@ export function initReleaseClient(documentRoot = globalThis.document, load = fet
       status.dataset.state = "success";
       status.textContent = "发布签名已验证，可使用国内 OSS 下载。";
     } catch (error) {
+      // Keep a bounded diagnostic for support; never log the signed content.
+      const diagnostic = error instanceof ReleaseError ? error.code
+        : error?.name === "AbortError" ? "timeout"
+          : error?.name === "TypeError" ? "network-or-runtime" : "runtime";
+      status.dataset.error = diagnostic;
+      status.dataset.errorStage = error?.releaseStage || stage;
+      console.warn("Screenline release check failed:", diagnostic,
+        status.dataset.errorStage, error instanceof Error ? error.name : "Error");
       reset();
       setText(documentRoot, '[data-release="version"]', "版本暂不可用");
       setText(documentRoot, '[data-release="size"]', "—");
