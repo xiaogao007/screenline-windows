@@ -77,24 +77,40 @@ namespace Screenline
             AppSettings defaults = new AppSettings();
             check(!defaults.WatchClipboard && defaults.WatchFolders && defaults.RevealOnCapture && defaults.HideInFullscreen,
                 "Clipboard watching is opt-in; screenshot folders and fullscreen protection default on");
+            check(!defaults.CheckUpdatesOnStartup, "Startup update checks require explicit opt-in by default");
             string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
             bool desktopExcluded = true;
             foreach (string watchPath in defaults.WatchPaths)
                 if (String.Equals(watchPath.TrimEnd('\\'), desktop.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) desktopExcluded = false;
             check(desktopExcluded, "Default monitoring paths do not include the desktop");
             defaults.WatchClipboard = true;
+            defaults.CheckUpdatesOnStartup = true;
             defaults.WatchFolders = false;
             defaults.WatchPaths = new string[] { sources };
             SettingsStore.Save(root, defaults);
             AppSettings settingsReloaded = SettingsStore.Load(root);
-            check(settingsReloaded.WatchClipboard && !settingsReloaded.WatchFolders && settingsReloaded.WatchPaths.Length == 1 &&
-                settingsReloaded.WatchPaths[0] == sources, "Settings and explicit clipboard consent persist");
+            check(settingsReloaded.WatchClipboard && settingsReloaded.CheckUpdatesOnStartup && !settingsReloaded.WatchFolders && settingsReloaded.WatchPaths.Length == 1 &&
+                settingsReloaded.WatchPaths[0] == sources, "Settings and explicit clipboard and startup update consent persist");
             defaults.WatchClipboard = false;
+            defaults.CheckUpdatesOnStartup = false;
             SettingsStore.Save(root, defaults);
+            check(!SettingsStore.Load(root).CheckUpdatesOnStartup, "Disabling startup update checks persists across settings reload");
             File.WriteAllText(Path.Combine(root, "settings.json"), "{ broken settings");
             AppSettings settingsRecovered = SettingsStore.Load(root);
-            check(!settingsRecovered.WatchClipboard && settingsRecovered.WatchPaths.Length == 1 && settingsRecovered.WatchPaths[0] == sources,
-                "Corrupt settings recover backup paths while disabling clipboard monitoring until new consent");
+            check(!settingsRecovered.WatchClipboard && !settingsRecovered.CheckUpdatesOnStartup && settingsRecovered.WatchPaths.Length == 1 && settingsRecovered.WatchPaths[0] == sources,
+                "Corrupt settings recover backup paths while disabling clipboard and startup update checks until new consent");
+            string legacyRoot = Path.Combine(sandbox, "legacy-settings");
+            Directory.CreateDirectory(legacyRoot);
+            File.WriteAllText(Path.Combine(legacyRoot, "settings.json"), "{\"WatchClipboard\":false,\"WatchFolders\":true,\"HideInFullscreen\":true,\"RevealOnCapture\":true}");
+            AppSettings legacySettings = SettingsStore.Load(legacyRoot);
+            check(!legacySettings.CheckUpdatesOnStartup && legacySettings.WatchFolders && legacySettings.WatchPaths != null,
+                "Existing settings without a startup update field migrate with update checks disabled");
+            string temporaryRoot = Path.Combine(sandbox, "temporary-settings");
+            SettingsStore.Save(temporaryRoot, new AppSettings { WatchClipboard = true, CheckUpdatesOnStartup = true, WatchPaths = new string[] { sources } });
+            File.Move(Path.Combine(temporaryRoot, "settings.json"), Path.Combine(temporaryRoot, "settings.json.tmp"));
+            AppSettings temporaryRecovered = SettingsStore.Load(temporaryRoot);
+            check(!temporaryRecovered.WatchClipboard && !temporaryRecovered.CheckUpdatesOnStartup && temporaryRecovered.WatchPaths.Length == 1 && temporaryRecovered.WatchPaths[0] == sources,
+                "Temporary settings recovery keeps paths but requires fresh clipboard and startup update consent");
 
             VerifyClipboardPrivacy(check);
             VerifyFolderWatcher(sandbox, bytesA, bytesB, check);

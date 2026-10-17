@@ -29,6 +29,12 @@ namespace Screenline
         internal UpdateWindow(Action<string> launchInstaller)
             : this(new UpdateService(), launchInstaller, AppVersion.Current, true) { }
 
+        internal UpdateWindow(Action<string> launchInstaller, ReleaseUpdate initialUpdate)
+            : this(new UpdateService(), launchInstaller, AppVersion.Current, initialUpdate == null)
+        {
+            if (initialUpdate != null) PresentUpdate(initialUpdate);
+        }
+
         internal UpdateWindow(UpdateService service, Action<string> launchInstaller, string currentVersion, bool autoCheck)
         {
             this.service = service;
@@ -129,6 +135,13 @@ namespace Screenline
         private static string ReleaseDetails(ReleaseUpdate release)
         {
             return "Windows 10 / 11 x64 · 安装包 " + (release.InstallerSize / 1048576.0).ToString("0.0", CultureInfo.InvariantCulture) + " MB\n更新会保留本机截图、设置和索引。";
+        }
+
+        internal void PresentUpdate(ReleaseUpdate release)
+        {
+            if (closed || operation != null || release == null) return;
+            update = release; installerPath = null;
+            SetState("Available", "发现新版本 " + release.Version, ReleaseDetails(release), "启动检查发现了此版本。下载和安装仍需你确认；关闭窗口可稍后再处理。");
         }
 
         internal async Task DownloadInstallerAsync()

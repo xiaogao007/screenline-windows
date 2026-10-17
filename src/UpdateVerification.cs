@@ -278,6 +278,20 @@ namespace Screenline
             string valid = ReleaseJson(false, false, true, true, AssetBase, installerHash, installerBytes.Length);
             using (var fixture = new Fixture(sandbox, valid))
             {
+                ReleaseUpdate knownUpdate = fixture.Check("0.1.3");
+                int requests = fixture.Handler.Requests.Count;
+                int launches = 0;
+                var window = new UpdateWindow(fixture.Service, delegate { launches++; }, "0.1.3", false);
+                try {
+                    window.PresentUpdate(knownUpdate); window.Show(); window.UpdateLayout();
+                    check(window.State == "Available" && FindButton(window, "下载 Windows 安装包") != null &&
+                        fixture.Handler.Requests.Count == requests && launches == 0 && !Directory.GetFiles(fixture.Root, "*.exe", SearchOption.AllDirectories).Any(),
+                        "A startup update reminder opens the known release without rechecking, downloading, or starting an installer");
+                }
+                finally { window.Close(); }
+            }
+            using (var fixture = new Fixture(sandbox, valid))
+            {
                 int launches = 0; string launchedPath = null;
                 var window = new UpdateWindow(fixture.Service, delegate(string path) { launches++; launchedPath = path; }, "0.1.3", false);
                 try

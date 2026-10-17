@@ -65,6 +65,10 @@ namespace Screenline
         private System.Drawing.Icon trayIcon;
         private CancellationTokenSource copyCancellation;
         private UpdateWindow updateWindow;
+        private readonly UpdateService startupUpdateService;
+        private readonly StartupUpdateChecker startupUpdateChecker;
+        private readonly Forms.ToolStripMenuItem updatesMenuItem;
+        private ReleaseUpdate pendingUpdate;
 
         internal AppController(Application application)
         {
@@ -103,10 +107,19 @@ namespace Screenline
             AddMenu(menu, "撤销移出", delegate { library.UndoLastRemove(); });
             AddMenu(menu, "打开本地图库", delegate { Process.Start(new ProcessStartInfo("explorer.exe", "\"" + root + "\"") { UseShellExecute = true }); });
             AddMenu(menu, "设置…", ShowSettings);
-            AddMenu(menu, "检查更新…", delegate { ShowUpdates(null); });
+            updatesMenuItem = AddMenu(menu, "检查更新…", delegate { ShowUpdates(null); });
             menu.Items.Add(new Forms.ToolStripSeparator());
             AddMenu(menu, "退出截图晾台", delegate { app.Shutdown(); });
             tray.ContextMenuStrip = menu;
+            tray.BalloonTipClicked += delegate {
+                app.Dispatcher.BeginInvoke(new Action(delegate {
+                    if (!disposed && !shuttingDown && settings.CheckUpdatesOnStartup && pendingUpdate != null) ShowUpdates(null);
+                }));
+            };
+            startupUpdateService = new UpdateService();
+            startupUpdateChecker = new StartupUpdateChecker(
+                delegate(CancellationToken token) { return startupUpdateService.CheckAsync(AppVersion.Current, token); },
+                NotifyStartupUpdate, new DispatcherSynchronizationContext(app.Dispatcher));
             var parameters = new HwndSourceParameters("Screenline.Messages") { Width = 0, Height = 0, WindowStyle = 0, ParentWindow = new IntPtr(-3) };
             messageWindow = new HwndSource(parameters); messageWindow.AddHook(WindowMessage);
             timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) }; timer.Tick += PollPointer;
@@ -120,12 +133,17 @@ namespace Screenline
             Reveal(true);
             if (!String.IsNullOrEmpty(startupStatus)) Report(startupStatus);
             if (!toggle || !capture) Report("快捷键被其他应用占用，请从托盘展开或截图。");
+            bool checkAtStartup = settings.CheckUpdatesOnStartup;
+            app.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(async delegate {
+                if (!disposed && !shuttingDown) await startupUpdateChecker.Start(checkAtStartup && settings.CheckUpdatesOnStartup);
+            }));
         }
-        private void AddMenu(Forms.ContextMenuStrip menu, string title, Action action)
+        private Forms.ToolStripMenuItem AddMenu(Forms.ContextMenuStrip menu, string title, Action action)
         {
             var item = new Forms.ToolStripMenuItem(title);
             item.Click += delegate { app.Dispatcher.BeginInvoke(new Action(delegate { try { action(); } catch (Exception ex) { Report(ex.Message); AppLog.Write(ex); } })); };
             menu.Items.Add(item);
+            return item;
         }
         private IntPtr WindowMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
@@ -237,7 +255,10 @@ namespace Screenline
                 var window = new SettingsWindow(settings, IsStartupEnabled(), root);
                 window.UpdatesRequested += delegate { ShowUpdates(window); };
                 if (window.ShowDialog() == true) {
-                    var candidate = window.Result; SettingsStore.Save(root, candidate); settings = candidate; sources.Restart(settings);
+                    var candidate = window.Result; SettingsStore.Save(root, candidate); settings = candidate;
+                    startupUpdateChecker.SetEnabled(settings.CheckUpdatesOnStartup);
+                    if (!settings.CheckUpdatesOnStartup) ClearStartupUpdateReminder();
+                    sources.Restart(settings);
                     try {
                         using (var key = Registry.CurrentUser.CreateSubKey("Software\\Microsoft\\Windows\\CurrentVersion\\Run"))
                             if (window.StartupEnabled) key.SetValue("Screenline", "\"" + Process.GetCurrentProcess().MainModule.FileName + "\""); else key.DeleteValue("Screenline", false);
@@ -249,7 +270,7 @@ namespace Screenline
         }
         private void ShowUpdates(Window owner)
         {
-            if (disposed) return;
+            if (disposed || shuttingDown) return;
             if (updateWindow != null) { updateWindow.Activate(); return; }
             bool wasBusy = busy;
             busy = true; shelf.Conceal();
@@ -260,12 +281,29 @@ namespace Screenline
                     process.Dispose();
                     shuttingDown = true;
                     app.Shutdown();
-                });
+                }, pendingUpdate);
                 if (owner != null) { updateWindow.Owner = owner; updateWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner; }
                 updateWindow.ShowDialog();
             }
             catch (Exception ex) { if (!disposed) Report("无法打开更新窗口：" + ex.Message); }
             finally { updateWindow = null; busy = wasBusy; if (!disposed && !shuttingDown && !wasBusy) Reveal(true); }
+        }
+        private void NotifyStartupUpdate(ReleaseUpdate update)
+        {
+            if (disposed || shuttingDown || !settings.CheckUpdatesOnStartup || update == null) return;
+            pendingUpdate = update;
+            updatesMenuItem.Text = "发现新版本 " + update.Version + "…";
+            string version = update.Version.Length > 40 ? update.Version.Substring(0, 37) + "…" : update.Version;
+            // Native Windows notifications respect the user's notification settings.
+            // The tray menu keeps the update available even after the balloon closes.
+            try { tray.ShowBalloonTip(10000, "截图晾台有新版本 " + version, "点击查看更新。下载和安装仍由你确认。", Forms.ToolTipIcon.Info); }
+            catch (System.ComponentModel.Win32Exception) { }
+            catch (InvalidOperationException) { }
+        }
+        private void ClearStartupUpdateReminder()
+        {
+            pendingUpdate = null;
+            updatesMenuItem.Text = "检查更新…";
         }
         private System.Drawing.Icon CreateIcon()
         {
@@ -285,6 +323,8 @@ namespace Screenline
         public void Dispose()
         {
             if (disposed) return; disposed = true;
+            startupUpdateChecker.Dispose(); startupUpdateService.Dispose();
+            ClearStartupUpdateReminder();
             if (copyCancellation != null) copyCancellation.Cancel();
             if (updateWindow != null) updateWindow.Close();
             timer.Stop(); sources.Dispose(); Native.UnregisterHotKey(messageWindow.Handle, 1); Native.UnregisterHotKey(messageWindow.Handle, 2); messageWindow.Dispose();

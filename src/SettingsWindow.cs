@@ -8,7 +8,7 @@ namespace Screenline
 {
     internal sealed class SettingsWindow : Window
     {
-        private readonly CheckBox clipboard, folders, reveal, fullscreen, startup;
+        private readonly CheckBox clipboard, folders, reveal, fullscreen, startup, startupUpdates;
         private readonly ListBox paths;
         private readonly TextBlock status;
         internal AppSettings Result { get; private set; }
@@ -51,7 +51,9 @@ namespace Screenline
             panel.Children.Add(Note(dataRoot));
             panel.Children.Add(Note("图片仅保存在本机。移出晾台可撤销，外部源文件始终保留。"));
             panel.Children.Add(new TextBlock { Text = "版本与更新", FontSize = 15, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 20, 0, 8) });
-            panel.Children.Add(Note("当前版本 " + AppVersion.Current + " · 仅在点击检查更新后连接 GitHub。"));
+            panel.Children.Add(Note("当前版本 " + AppVersion.Current + " · 检查更新时会连接 GitHub。"));
+            startupUpdates = Check("启动时检查更新", settings.CheckUpdatesOnStartup); panel.Children.Add(startupUpdates);
+            panel.Children.Add(Note("开启并保存后，从下次启动起每次检查一次；有新版仅提醒，下载和安装需你确认。"));
             var updates = Theme.Button("检查更新…", false); updates.HorizontalAlignment = HorizontalAlignment.Left; updates.Margin = new Thickness(0, 8, 0, 0);
             updates.Click += delegate { if (UpdatesRequested != null) UpdatesRequested(); }; panel.Children.Add(updates);
             Content = outer;
@@ -66,7 +68,7 @@ namespace Screenline
                 if (!Path.IsPathRooted(path)) { status.Text = "文件夹路径无效：" + path; return; }
                 selected.Add(path);
             }
-            Result = new AppSettings { WatchClipboard = clipboard.IsChecked == true, WatchFolders = folders.IsChecked == true, RevealOnCapture = reveal.IsChecked == true, HideInFullscreen = fullscreen.IsChecked == true, WatchPaths = selected.ToArray() };
+            Result = new AppSettings { WatchClipboard = clipboard.IsChecked == true, WatchFolders = folders.IsChecked == true, RevealOnCapture = reveal.IsChecked == true, HideInFullscreen = fullscreen.IsChecked == true, CheckUpdatesOnStartup = startupUpdates.IsChecked == true, WatchPaths = selected.ToArray() };
             DialogResult = true;
         }
     }

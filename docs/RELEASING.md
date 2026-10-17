@@ -1,18 +1,18 @@
 # 维护者发布说明
 
-仓库通过 [Windows Release 工作流](../.github/workflows/release.yml) 自动发布 Windows 10 / 11 x64 安装版与便携版。推送符合 `v*.*.*` 的版本标签会触发工作流，例如 `v0.1.6`；手动运行完成相同的构建、测试和打包，但不发布 Release。也支持 `v1.0.0-rc.1` 这类预发布版本标签，发布时会标记为 GitHub prerelease。
+仓库通过 [Windows Release 工作流](../.github/workflows/release.yml) 自动发布 Windows 10 / 11 x64 安装版与便携版。推送符合 `v*.*.*` 的版本标签会触发工作流，例如 `v0.1.7`；手动运行完成相同的构建、测试和打包，但不发布 Release。也支持 `v1.0.0-rc.1` 这类预发布版本标签，发布时会标记为 GitHub prerelease。
 
 ## 发布新版本
 
 1. 更新源码、根目录的 `VERSION`（不含 `v`）、`CHANGELOG.md` 及相关中文文档，并将改动提交、合并到 `main`。
-2. 如需自定义该版本的 Release 正文，将中文说明保存为 `docs/RELEASE-vX.Y.Z.md` 并一并提交。没有该文件时，工作流生成包含下载、自检与使用说明的正文。v0.1.5 的说明已包含在仓库中。
-3. 在包含工作流与上述改动的提交上创建并推送新标签。以下以之后的 `v0.1.6` 为例：
+2. 如需自定义该版本的 Release 正文，将中文说明保存为 `docs/RELEASE-vX.Y.Z.md` 并一并提交。没有该文件时，工作流生成包含下载、自检与使用说明的正文。v0.1.6 的说明已包含在仓库中。
+3. 在包含工作流与上述改动的提交上创建并推送新标签。以下以之后的 `v0.1.7` 为例：
 
 ```powershell
 git switch main
 git pull --ff-only origin main
-git tag v0.1.6
-git push origin v0.1.6
+git tag v0.1.7
+git push origin v0.1.7
 ```
 
 请使用尚未发布的新版本号。工作流必须已经存在于标签指向的提交中；仅把工作流提交到 `main`，再推送指向旧提交的标签，不会为旧提交补上工作流。
@@ -52,27 +52,27 @@ git push origin v0.1.6
 先构建并通过自检，再生成安装包：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Version v0.1.5 -Test
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Tag v0.1.5
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Version v0.1.6 -Test
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1 -Tag v0.1.6
 ```
 
-脚本会查找 Inno Setup 编译器；如果编译器不在默认位置，可通过 `-IsccPath 'C:\path\to\ISCC.exe'` 参数或 `ISCC_PATH` 环境变量指定。生成的安装文件名为 `Screenline-v0.1.5-windows-x64-setup.exe`。
+脚本会查找 Inno Setup 编译器；如果编译器不在默认位置，可通过 `-IsccPath 'C:\path\to\ISCC.exe'` 参数或 `ISCC_PATH` 环境变量指定。生成的安装文件名为 `Screenline-v0.1.6-windows-x64-setup.exe`。
 
 准备完整发布附件时，先提交全部发布源码、保持工作区干净，再运行：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Tag v0.1.5
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Tag v0.1.6
 ```
 
 `package-release.ps1` 会调用安装器构建脚本，并生成安装包、便携包、对应当前提交的源码包、校验文件和 Release 正文，默认输出到 `dist`。此脚本同样支持 `-IsccPath` 和 `ISCC_PATH`。打包需要刚构建程序的成功自检报告；源码 ZIP 通过 `git archive` 生成，包含已提交文件，不包含被忽略的二进制和测试产物。发布标签应指向这份源码提交，GitHub 工作流会据此检出并构建。
 
-`build.ps1` 默认读取 `VERSION`；`-Version` 接受 `0.1.5`、`v0.1.5` 或完整 SemVer，保留预发布和构建标识作为程序集信息版本，数字核心写入文件版本。Visual Studio / MSBuild 也读取 `VERSION`，可用 `/p:Version=0.1.5` 覆盖。生成的版本文件位于被忽略的 `obj` 目录。标签构建始终使用标签值，手动 Actions 使用 `0.0.0-ci.<run number>`，不会误用源码中的固定版本。
+`build.ps1` 默认读取 `VERSION`；`-Version` 接受 `0.1.6`、`v0.1.6` 或完整 SemVer，保留预发布和构建标识作为程序集信息版本，数字核心写入文件版本。Visual Studio / MSBuild 也读取 `VERSION`，可用 `/p:Version=0.1.6` 覆盖。生成的版本文件位于被忽略的 `obj` 目录。标签构建始终使用标签值，手动 Actions 使用 `0.0.0-ci.<run number>`，不会误用源码中的固定版本。
 
 安装器和发布打包脚本会拒绝 EXE 信息版本与请求的标签版本不符的文件。改了版本或标签后，请重新构建和自检，不要给旧 EXE 换名发布。
 
 ## 应用内更新的发布约定
 
-应用仅在用户点击“检查更新”时读取 `xiaogao007/screenline-windows` 的最新正式 GitHub Release。请保留规范标签 `vX.Y.Z`、附件 `Screenline-vX.Y.Z-windows-x64-setup.exe` 和同一 Release 的 `SHA256SUMS.txt`，其中安装器行必须包含实际 SHA-256。预发布版本继续标记为 prerelease，不进入正式更新入口。程序验证版本、下载来源和校验值后，仍需用户点击运行才启动安装器。
+应用在用户手动点击“检查更新”，或已保存启用“启动时检查更新”后启动应用时，读取 `xiaogao007/screenline-windows` 的最新正式 GitHub Release。启动选项默认关闭，每次启动最多检查一次；有新版只发出托盘提醒，不自动下载或安装。请保留规范标签 `vX.Y.Z`、附件 `Screenline-vX.Y.Z-windows-x64-setup.exe` 和同一 Release 的 `SHA256SUMS.txt`，其中安装器行必须包含实际 SHA-256。预发布版本继续标记为 prerelease，不进入正式更新入口。程序验证版本、下载来源和校验值后，仍需用户点击运行才启动安装器。更新查询不使用 GitHub 账户凭据，也不上传用户图片、剪贴板、设置或日志。
 
 本地生成附件不会自动发布到 GitHub。正式发布请使用上面的标签流程，让工作流执行安装卸载检查后发布。
 

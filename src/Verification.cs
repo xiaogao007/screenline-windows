@@ -31,6 +31,7 @@ namespace Screenline
             {
                 var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
                 ServiceVerification.Run(sandbox, Check);
+                StartupUpdateVerification.Run(Check);
                 UpdateVerification.Run(sandbox, Check);
                 Check(CaptureMath.Region(new Point(50, 50), new Point(-50, -20), 100, 100, 200, 200) == new Int32Rect(0, 0, 100, 100), "Crop clamps negative pointer outside selection window");
                 Check(CaptureMath.Region(new Point(90, 90), new Point(120, 140), 100, 100, 100, 100) == new Int32Rect(90, 90, 10, 10), "Crop clamps right and bottom edges");
@@ -80,13 +81,30 @@ namespace Screenline
                 Check(Descendants<TextBlock>(preview).Any(delegate(TextBlock t) { return t.Text.StartsWith("保存失败"); }) && ink.Strokes.Count == 1, "Failed annotation save reports failure and preserves editable strokes");
                 preview.SaveToLine -= failSave; preview.SaveToLine += delegate { return true; };
                 saveAnnotation.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); preview.Close();
-                var settings = new SettingsWindow(new AppSettings(), false, library.RootPath); settings.Show(); settings.UpdateLayout();
+                var settingsInput = new AppSettings();
+                SettingsStore.Save(library.RootPath, settingsInput);
+                var settings = new SettingsWindow(settingsInput, false, library.RootPath); settings.Show(); settings.UpdateLayout();
                 Render(settings, Path.Combine(destination, "settings-preview.png"), false);
                 Check(settings.StartupEnabled == false, "Startup remains opt-in");
+                var startupUpdates = Descendants<CheckBox>(settings).Single(delegate(CheckBox box) { return (string)box.Content == "启动时检查更新"; });
+                Check(startupUpdates.IsChecked == false, "Settings displays the default-disabled startup update checkbox");
+                settings.Width = 500; settings.Height = 540; settings.UpdateLayout(); startupUpdates.BringIntoView();
+                settings.Dispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(delegate { settings.UpdateLayout(); }));
+                var settingsScroll = Descendants<ScrollViewer>(settings).First();
+                Point checkboxLocation = startupUpdates.TranslatePoint(new Point(0, 0), settingsScroll);
+                Check(checkboxLocation.Y >= 0 && checkboxLocation.Y + startupUpdates.ActualHeight <= settingsScroll.ViewportHeight + 1,
+                    "Startup update preference stays reachable by scrolling at the minimum settings window size");
+                Render(settings, Path.Combine(destination, "settings-updates-preview.png"), false);
                 bool updatesRaised = false; settings.UpdatesRequested += delegate { updatesRaised = true; };
                 var updatesButton = Descendants<Button>(settings).FirstOrDefault(delegate(Button button) { return AutomationProperties.GetName(button).StartsWith("检查更新", StringComparison.Ordinal); });
                 if (updatesButton != null) updatesButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                Check(updatesRaised, "Settings exposes an accessible check-for-updates action and raises its navigation event"); settings.Close();
+                Check(updatesRaised, "Settings exposes an accessible check-for-updates action and raises its navigation event");
+                startupUpdates.IsChecked = true;
+                settings.Close();
+                Check(settings.Result == null && !settingsInput.CheckUpdatesOnStartup && !SettingsStore.Load(library.RootPath).CheckUpdatesOnStartup,
+                    "Cancelling settings after changing startup updates leaves the saved preference untouched");
+                VerifyStartupUpdateSettingsSave(false, true, library.RootPath);
+                VerifyStartupUpdateSettingsSave(true, false, library.RootPath);
                 app.Shutdown();
             }
             catch (Exception ex) { failures++; lines.Add("FAIL Unexpected exception: " + ex); }
@@ -95,6 +113,25 @@ namespace Screenline
             return failures == 0 ? 0 : 1;
         }
         private static void Check(bool condition, string name) { lines.Add((condition ? "PASS " : "FAIL ") + name); if (!condition) failures++; }
+
+        private static void VerifyStartupUpdateSettingsSave(bool savedValue, bool newValue, string root)
+        {
+            var original = new AppSettings { CheckUpdatesOnStartup = savedValue, WatchFolders = false, WatchPaths = new string[] { root } };
+            var window = new SettingsWindow(original, false, root);
+            bool checkboxReflectsSavedValue = false;
+            window.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(delegate
+            {
+                var checkbox = Descendants<CheckBox>(window).Single(delegate(CheckBox box) { return (string)box.Content == "启动时检查更新"; });
+                checkboxReflectsSavedValue = checkbox.IsChecked == savedValue;
+                checkbox.IsChecked = newValue;
+                var save = Descendants<Button>(window).Single(delegate(Button button) { return AutomationProperties.GetName(button) == "保存设置"; });
+                save.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }));
+            bool accepted = window.ShowDialog() == true;
+            Check(checkboxReflectsSavedValue && accepted && window.Result != null && window.Result.CheckUpdatesOnStartup == newValue &&
+                original.CheckUpdatesOnStartup == savedValue && !window.Result.WatchFolders && window.Result.WatchPaths.SequenceEqual(original.WatchPaths),
+                "Settings reads the saved startup update preference and saves it " + (newValue ? "enabled" : "disabled") + " without mutating its input");
+        }
 
         internal static BitmapSource DemoImage(int width, int height, int variant)
         {

@@ -42,6 +42,7 @@ namespace Screenline
         [DataMember] public bool WatchFolders { get; set; }
         [DataMember] public bool RevealOnCapture { get; set; }
         [DataMember] public bool HideInFullscreen { get; set; }
+        [DataMember] public bool CheckUpdatesOnStartup { get; set; }
         [DataMember] public string[] WatchPaths { get; set; }
 
         public AppSettings() { SetDefaults(); }
@@ -54,6 +55,7 @@ namespace Screenline
             WatchFolders = true;
             RevealOnCapture = true;
             HideInFullscreen = true;
+            CheckUpdatesOnStartup = false;
             List<string> paths = new List<string>();
             string pictures = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
             if (!String.IsNullOrEmpty(pictures)) paths.Add(Path.Combine(pictures, "Screenshots"));
@@ -85,8 +87,12 @@ namespace Screenline
                     if (value == null) continue;
                     if (value.WatchPaths == null) value.WatchPaths = new AppSettings().WatchPaths;
                     // A backup may predate a user's decision to disable clipboard
-                    // monitoring. Recovery must require fresh explicit consent.
-                    if (!String.Equals(candidate, file, StringComparison.OrdinalIgnoreCase)) value.WatchClipboard = false;
+                    // monitoring or startup network access. Require fresh consent.
+                    if (!String.Equals(candidate, file, StringComparison.OrdinalIgnoreCase))
+                    {
+                        value.WatchClipboard = false;
+                        value.CheckUpdatesOnStartup = false;
+                    }
                     return value;
                 }
                 catch (Exception ex)
