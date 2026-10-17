@@ -94,11 +94,10 @@ if ([string]::IsNullOrWhiteSpace($IsccPath) -or
     throw 'Inno Setup 6.7 or later is required. Install it from https://jrsoftware.org/isdl.php or pass -IsccPath to ISCC.exe.'
 }
 $compilerPath = (Resolve-Path -LiteralPath $IsccPath).Path
-$compilerVersion = (Get-Item -LiteralPath $compilerPath).VersionInfo
-if ($compilerVersion.FileMajorPart -lt 6 -or
-    ($compilerVersion.FileMajorPart -eq 6 -and $compilerVersion.FileMinorPart -lt 7)) {
-    throw 'Inno Setup 6.7 or later is required for the installer architecture settings.'
-}
+# ISCC.exe is a wrapper around ISCmplr.dll. Its Windows file resource version
+# does not identify the compiler engine version. Let the compiler validate the
+# script directives instead of rejecting a supported engine based on the wrapper.
+Write-Output ('Inno Setup compiler: ' + $compilerPath)
 
 [System.IO.Directory]::CreateDirectory($outputRoot) | Out-Null
 $installerPath = Join-Path $outputRoot ('Screenline-' + $Tag + '-windows-x64-setup.exe')
