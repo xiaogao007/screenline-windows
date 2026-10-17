@@ -10,14 +10,14 @@ Screenline 受 [Tendedero](https://github.com/alejandrobujan/tendedero) 启发�
 
 ## 下载与运行
 
-1. 打开 [Releases](https://github.com/xiaogao007/screenline-windows/releases/latest)，在 **Assets** 中下载 **Screenline-v0.1.0-windows-x64.zip**。`Screenline-v0.1.0-source.zip` 和 GitHub 自动生成的 `Source code` 压缩包仅含源码。
+1. 打开 [Releases](https://github.com/xiaogao007/screenline-windows/releases/latest)，在 **Assets** 中下载 **Screenline-vX.Y.Z-windows-x64.zip**，其中 `X.Y.Z` 为该版本号。`Screenline-vX.Y.Z-source.zip` 和 GitHub 自动生成的 `Source code` 压缩包仅含源码。
 2. 将 ZIP **完整解压**到一个固定文件夹，保留 `Screenline.exe` 旁边的 `Screenline.exe.config`。
 3. 双击 **Screenline.exe**。应用出现在系统托盘，首次展开后会自动收起。
 4. 按 **Ctrl + Alt + T**，或将鼠标停在显示器顶边约 350 ms，即可展开晾台。右键托盘图标可打开设置或退出。
 
 需要 **.NET Framework 4.8**；Windows 11 已内置，较新的 Windows 10 通常也已安装。运行程序不需要 Node、Python、.NET SDK 或管理员权限。
 
-当前发布为 **v0.1.0 首版**，程序尚未代码签名，未提供安装器或自动更新。下载校验、运行问题与升级方法见 [Windows 使用说明](docs/WINDOWS.md)。
+程序尚未代码签名，未提供安装器或自动更新。下载校验、运行问题与升级方法见 [Windows 使用说明](docs/WINDOWS.md)。
 
 ## 快捷键与操作
 
@@ -67,9 +67,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Test
 
 自检只使用合成图片及隔离测试目录，不读取或改写系统剪贴板。覆盖导入去重、持久化、移除撤销、损坏索引恢复、原子保存失败、文件监控、隐私过滤、选区边界、原图尺寸保留及 WPF 渲染。测试报告与界面预览生成在 `tests/results`。
 
-## v0.1.0 的范围与限制
+## 自动构建与发布
 
-这是功能迁移首版，不是上游的完整功能对齐版。未实现录屏、视频裁剪、Force Touch、拖到回收站删除、自定义快捷键、尺寸档位和数量上限。采用原生 WPF 白色相框和木夹；没有移植 macOS 液态玻璃效果。混合 DPI、多显示器热插拔、游戏独占全屏、屏幕阅读器及 ARM64 尚未完成实机验证。
+向 GitHub 推送 `vX.Y.Z` 版本标签后，[Windows Release 工作流](.github/workflows/release.yml) 会在 Windows runner 上构建程序、执行 `build.ps1 -Test` 自检，并打包便携程序、对应标签源码及 `SHA256SUMS.txt`。只有构建、自检、打包与附件上传均成功，才会公开 Release。已有的正式发布不会被覆盖。
+
+也可以在仓库的 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 页面手动运行工作流；手动运行仅构建、自检并保存产物，不创建 Release。标签发布步骤、权限与失败重试方法见 [维护者发布说明](docs/RELEASING.md)。
+
+## 当前范围与限制
+
+当前仍处于 Windows 功能迁移的早期阶段，尚未与上游完整对齐。未实现录屏、视频裁剪、Force Touch、拖到回收站删除、自定义快捷键、尺寸档位和数量上限。采用原生 WPF 白色相框和木夹；没有移植 macOS 液态玻璃效果。混合 DPI、多显示器热插拔、游戏独占全屏、屏幕阅读器及 ARM64 尚未完成实机验证。
 
 更多行为差异见 [Windows 平台迁移说明](docs/MIGRATION.md)。遇到问题时，可在 GitHub 提交 Issue，附上 Windows 版本、显示器缩放比例、复现步骤和日志中与问题有关的内容；提交前请检查截图、路径等个人信息。
 

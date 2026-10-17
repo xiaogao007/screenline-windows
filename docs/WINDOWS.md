@@ -1,6 +1,6 @@
 # Windows 使用说明
 
-适用于 Screenline / 截图晾台 v0.1.0，Windows 10 / 11 x64。
+适用于 Screenline / 截图晾台当前版本，Windows 10 / 11 x64。
 
 ## 安装与首次运行
 
@@ -15,10 +15,12 @@
 在 PowerShell 中计算下载 ZIP 的 SHA-256，并与同一 Release 公布的校验值逐字比对：
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath .\Screenline-v0.1.0-windows-x64.zip
+Get-FileHash -Algorithm SHA256 -LiteralPath .\Screenline-vX.Y.Z-windows-x64.zip
 ```
 
-如果实际文件名包含版本号，请将命令中的文件名替换为下载文件名。校验值不同或来源不明时，请重新从仓库的 Release 下载。
+将 `vX.Y.Z` 替换为实际版本号，并与同一 Release 中 `SHA256SUMS.txt` 对应文件的值比较。校验值不同或来源不明时，请重新从仓库的 Release 下载。
+
+从 v0.1.1 起，标签发布由 GitHub Actions 在 Windows runner 上构建，并通过项目自检后生成下载附件。可以在 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 查看对应标签的执行记录；自检覆盖范围见 [README](../README.md#从源码构建)。自检无法代替所有显示器配置和桌面交互的实机验证。
 
 ## 日常使用
 
@@ -47,7 +49,7 @@ Get-FileHash -Algorithm SHA256 -LiteralPath .\Screenline-v0.1.0-windows-x64.zip
 
 ### 快捷键没有反应
 
-其他应用可能已占用组合键。Screenline 会显示相关提示，此时使用托盘菜单操作。v0.1.0 暂不支持自定义快捷键。
+其他应用可能已占用组合键。Screenline 会显示相关提示，此时使用托盘菜单操作。当前版本暂不支持自定义快捷键。
 
 ### 全屏时鼠标移到顶边没有展开
 
