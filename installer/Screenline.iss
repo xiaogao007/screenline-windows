@@ -1,4 +1,7 @@
 ﻿; Compile through scripts/build-installer.ps1 so version and payload validation run first.
+#if Ver < 0x06070000
+  #error Inno Setup 6.7 or later is required.
+#endif
 #ifndef ReleaseTag
   #error ReleaseTag is required, for example /DReleaseTag=v0.1.3
 #endif
