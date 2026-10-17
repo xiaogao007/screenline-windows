@@ -3,7 +3,7 @@ screenline.xiaogao.xyz {
     header {
         Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none'"
         X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
+        Referrer-Policy "no-referrer"
         defer
     }
 
@@ -13,6 +13,7 @@ screenline.xiaogao.xyz {
         rewrite * /screenline/stable/latest.json
         reverse_proxy https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com {
             header_up Host screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com
+            header_up -Referer
             header_down -Content-Disposition
         }
     }

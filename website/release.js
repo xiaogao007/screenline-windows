@@ -175,7 +175,7 @@ export async function fetchVerifiedRelease({ fetcher = globalThis.fetch, cryptoP
   baseUrl = import.meta.url, timeout = TIMEOUT_MS } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
-  const options = { signal: controller.signal, cache: "no-store", credentials: "omit", redirect: "error" };
+  const options = { signal: controller.signal, cache: "no-store", credentials: "omit", redirect: "error", referrerPolicy: "no-referrer" };
   let stage = "fetch";
   try {
     const get = async (path, maximum) => {

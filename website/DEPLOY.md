@@ -19,6 +19,8 @@ assets/shelf-preview.png
 
 `docs`、测试、部署脚本和本地预览用的 `releases/latest.json` 均不上传到公开网站目录。生产的 `/releases/latest.json` 必须精确反代到 OSS 的 `/screenline/stable/latest.json`，这样以后程序发布更新清单时，官网无需重新部署即可读取最新签名版本。不要复制一份清单长期放进站点目录。
 
+本站响应头与 HTML 元信息使用 `Referrer-Policy: no-referrer`，版本请求也显式指定不发送来源页；Caddy 转发清单时移除 `Referer`。现有 OSS 防盗链规则允许空来源，来自新官网的非空来源会被拒绝，因此安装包等下载导航也必须保持此策略。不要为了官网放宽整个 Bucket 的防盗链或 CORS 配置。
+
 ## 准备精确源码归档
 
 将待部署的网站改动提交并推送后，记录完整的 40 位 commit SHA。不要用 `main`、短 SHA 或会移动的标签替代。对应归档的唯一下载地址是：

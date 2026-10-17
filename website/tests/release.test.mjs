@@ -136,6 +136,7 @@ test("fetches only the same-origin manifest and key without cookies or redirects
     assert.equal(options.credentials, "omit");
     assert.equal(options.redirect, "error");
     assert.equal(options.cache, "no-store");
+    assert.equal(options.referrerPolicy, "no-referrer");
   });
 });
 
@@ -239,6 +240,8 @@ function tags(html, name = "[a-z][a-z0-9-]*") {
 test("the actual page supplies every client DOM contract and a no-JavaScript fallback", async () => {
   const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
   const elements = tags(html);
+  assert.ok(elements.some(({ name, attributes }) => name === "meta"
+    && attributes.name === "referrer" && attributes.content === "no-referrer"));
   const downloads = elements.filter(({ attributes }) => Object.hasOwn(attributes, "data-download"));
   assert.equal(downloads.length, 6);
   assert.deepEqual(downloads.map(({ attributes }) => attributes["data-download"]).sort(),
