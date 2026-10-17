@@ -20,7 +20,7 @@ Get-FileHash -Algorithm SHA256 -LiteralPath .\Screenline-vX.Y.Z-windows-x64.zip
 
 将 `vX.Y.Z` 替换为实际版本号，并与同一 Release 中 `SHA256SUMS.txt` 对应文件的值比较。校验值不同或来源不明时，请重新从仓库的 Release 下载。
 
-从 v0.1.1 起，标签发布由 GitHub Actions 在 Windows runner 上构建，并通过项目自检后生成下载附件。可以在 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 查看对应标签的执行记录；自检覆盖范围见 [README](../README.md#从源码构建)。自检无法代替所有显示器配置和桌面交互的实机验证。
+从 v0.1.2 起，标签发布由 GitHub Actions 在 Windows runner 上构建，并通过项目自检后生成下载附件。可以在 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 查看对应标签的执行记录；自检覆盖范围见 [README](../README.md#从源码构建)。自检无法代替所有显示器配置和桌面交互的实机验证。
 
 ## 日常使用
 

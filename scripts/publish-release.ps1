@@ -52,17 +52,21 @@ if ($remoteCommit -cne $Commit) { throw 'The remote tag no longer points to the 
 $checkoutCommit = (& git -C $projectRoot rev-parse HEAD | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or $checkoutCommit -cne $Commit) { throw 'The release checkout must match the tested build commit.' }
 
-# Listing also finds drafts, which cannot reliably be fetched using the published-tag endpoint.
-# Parsing JSON here avoids embedded jq quotes in Windows PowerShell native arguments.
+# Resolve pending tags using the same GraphQL lookup as GitHub CLI. REST list/tag
+# endpoints do not reliably expose a newly-created draft by its pending tag name.
 function Find-Release {
-    $json = (Invoke-Gh -Arguments @('api', '--paginate', '--slurp', "repos/$Repository/releases?per_page=100") | Out-String)
-    $pages = $json | ConvertFrom-Json
-    foreach ($page in $pages) {
-        foreach ($entry in $page) {
-            if ($entry.tag_name -ceq $Tag) { return $entry }
-        }
+    $parts = $Repository.Split('/')
+    $payload = @{
+        query = 'query($owner:String!,$name:String!,$tagName:String!){repository(owner:$owner,name:$name){release(tagName:$tagName){databaseId isDraft}}}'
+        variables = @{ owner = $parts[0]; name = $parts[1]; tagName = $Tag }
     }
-    return $null
+    $lookupPath = Join-Path $artifactRoot 'release-lookup.json'
+    [IO.File]::WriteAllText($lookupPath, ($payload | ConvertTo-Json -Depth 5), (New-Object Text.UTF8Encoding($false)))
+    $response = (Invoke-Gh -Arguments @('api', 'graphql', '--input', $lookupPath) | Out-String) | ConvertFrom-Json
+    if ($response.errors -or $null -eq $response.data.repository) { throw 'GitHub release lookup failed.' }
+    $found = $response.data.repository.release
+    if ($null -eq $found) { return $null }
+    return ((Invoke-Gh -Arguments @('api', "repos/$Repository/releases/$($found.databaseId)") | Out-String) | ConvertFrom-Json)
 }
 $existing = Find-Release
 if ($null -ne $existing) {
@@ -74,7 +78,12 @@ else {
     if ($isPrerelease) { $create += '--prerelease' }
     Invoke-Gh -Arguments $create | Out-Host
 }
-$draft = Find-Release
+$draft = $null
+for ($attempt = 0; $attempt -lt 5; $attempt++) {
+    $draft = Find-Release
+    if ($null -ne $draft) { break }
+    Start-Sleep -Seconds 2
+}
 if ($null -eq $draft -or !$draft.draft -or $draft.target_commitish -cne $Commit) { throw 'Cannot verify a draft for the tested commit.' }
 
 # Only unpublished drafts may replace assets on retry.

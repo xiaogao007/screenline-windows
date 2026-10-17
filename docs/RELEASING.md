@@ -1,18 +1,18 @@
 # 维护者发布说明
 
-仓库通过 [Windows Release 工作流](../.github/workflows/release.yml) 自动发布 Windows 10 / 11 x64 便携版。推送符合 `v*.*.*` 的版本标签会触发工作流，例如 `v0.1.2`；手动运行仅构建、自检和打包，不发布 Release。也支持 `v1.0.0-rc.1` 这类预发布版本标签，发布时会标记为 GitHub prerelease。
+仓库通过 [Windows Release 工作流](../.github/workflows/release.yml) 自动发布 Windows 10 / 11 x64 便携版。推送符合 `v*.*.*` 的版本标签会触发工作流，例如 `v0.1.3`；手动运行仅构建、自检和打包，不发布 Release。也支持 `v1.0.0-rc.1` 这类预发布版本标签，发布时会标记为 GitHub prerelease。
 
 ## 发布新版本
 
 1. 更新源码、`CHANGELOG.md` 及相关中文文档，并将改动提交、合并到 `main`。
-2. 如需自定义该版本的 Release 正文，将中文说明保存为 `docs/RELEASE-v0.1.2.md` 并一并提交。没有该文件时，工作流生成包含下载、自检与使用说明的正文。
-3. 在包含工作流与上述改动的提交上创建并推送新标签。以下以 `v0.1.2` 为例：
+2. 如需自定义该版本的 Release 正文，将中文说明保存为 `docs/RELEASE-v0.1.3.md` 并一并提交。没有该文件时，工作流生成包含下载、自检与使用说明的正文。
+3. 在包含工作流与上述改动的提交上创建并推送新标签。以下以 `v0.1.3` 为例：
 
 ```powershell
 git switch main
 git pull --ff-only origin main
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 请使用尚未发布的新版本号。工作流必须已经存在于标签指向的提交中；仅把工作流提交到 `main`，再推送指向旧提交的标签，不会为旧提交补上工作流。
