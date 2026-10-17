@@ -1,0 +1,25 @@
+# BEGIN SCREENLINE MANAGED SITE
+screenline.xiaogao.xyz {
+    header {
+        Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'none'"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        defer
+    }
+
+    @release_manifest path /releases/latest.json
+    handle @release_manifest {
+        header >Cache-Control "no-store"
+        rewrite * /screenline/stable/latest.json
+        reverse_proxy https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com {
+            header_up Host screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com
+            header_down -Content-Disposition
+        }
+    }
+
+    handle {
+        root * /var/www/screenline/current
+        file_server
+    }
+}
+# END SCREENLINE MANAGED SITE

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#EDF4F7">
+  <meta name="description" content="截图晾台 Screenline 是一款免费开源的 Windows 截图整理工具。把截图挂在屏幕上沿，随手复制、预览、标注或拖出使用。提供国内安装包与便携版下载。">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:title" content="截图晾台 Screenline — 把截图挂在屏幕上沿">
+  <meta property="og:description" content="给截图一处顺手的位置。免费开源的 Windows 截图晾台，提供国内下载。">
+  <meta property="og:url" content="https://screenline.xiaogao.xyz/">
+  <meta property="og:image" content="https://screenline.xiaogao.xyz/assets/shelf-preview.png">
+  <link rel="canonical" href="https://screenline.xiaogao.xyz/">
+  <link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./release.js"></script>
+  <title>截图晾台 Screenline — 把截图挂在屏幕上沿</title>
+</head>
+<body id="top">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="site-header page-width">
+    <a class="brand" href="#top" aria-label="截图晾台 Screenline 首页">
+      <img src="./assets/logo.svg" width="42" height="42" alt="">
+      <span class="brand-name">截图晾台<span class="brand-en">SCREENLINE</span></span>
+    </a>
+    <nav class="site-nav" aria-label="主要导航">
+      <a href="#how-it-works">怎么用</a>
+      <a href="#questions">常见问题</a>
+      <a class="nav-download" href="#download">下载<span aria-hidden="true"> ↓</span></a>
+      <a class="nav-github" href="https://github.com/xiaogao007/screenline-windows" aria-label="在 GitHub 查看截图晾台源码">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-4.2 1.2-4.2-2.1-5.9-2.5M15 22v-3.3c0-.9.1-1.7-.4-2.4 3.3-.4 6.7-1.6 6.7-7.2A5.6 5.6 0 0 0 19.8 5c.1-.4.7-2.1-.2-4 0 0-1.3-.4-4.2 1.6a14.5 14.5 0 0 0-7.6 0C4.9.6 3.6 1 3.6 1c-.9 1.9-.3 3.6-.2 4A5.6 5.6 0 0 0 1.9 9c0 5.6 3.4 6.8 6.7 7.2-.4.5-.6 1.2-.6 2.4V22"/></svg>
+        <span>GitHub</span>
+      </a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero page-width" aria-labelledby="hero-title">
+      <p class="eyebrow"><span class="quiet-dot" aria-hidden="true"></span> 给 Windows 截图，留一处顺手的位置</p>
+      <h1 id="hero-title">把截图挂在屏幕上沿，<br>随手取用。</h1>
+      <p class="hero-description">参考图、临时素材、刚截下的重要片段。<br class="desktop-break">放在眼前，随手复制、预览、标注或拖出。</p>
+      <div class="hero-actions">
+        <a class="button button-primary" data-download="installer" href="#download">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5"/></svg>
+          下载 Windows 安装包
+        </a>
+        <a class="text-link hero-secondary" data-download="portable" href="#download">下载便携版 <span aria-hidden="true">↗</span></a>
+      </div>
+      <p class="hero-requirements">Windows 10 / 11 x64<span aria-hidden="true"> · </span>免费开源<span aria-hidden="true"> · </span>无需账户</p>
+
+      <figure class="product-preview">
+        <div class="preview-caption-top"><span>屏幕上沿，就是你的截图晾台</span><span class="preview-shortcut"><kbd>Ctrl</kbd><span> + </span><kbd>Alt</kbd><span> + </span><kbd>T</kbd><span class="shortcut-description"> 随时展开</span></span></div>
+        <div class="preview-image">
+          <img src="./assets/shelf-preview.png" alt="Windows 程序真实界面：三张示例截图以白色相框挂在晾衣绳上，右上角有截图、导入、设置与收起按钮。" width="1180" height="278" fetchpriority="high">
+        </div>
+        <figcaption>Windows 程序界面 · 图中内容为示例图片</figcaption>
+      </figure>
+    </section>
+
+    <section class="workflow page-width section-space" id="how-it-works" aria-labelledby="workflow-title">
+      <div class="section-heading">
+        <p class="eyebrow">从截图，到下一步</p>
+        <h2 id="workflow-title">用完之前，<br>一直在手边。</h2>
+        <p>留住临时用得上的图片，<br>让注意力回到正在做的事。</p>
+      </div>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-number" aria-hidden="true">01</span>
+          <h3>截下来，挂上去</h3>
+          <p>用快捷键选区截图，或把已有图片拖入晾台。也可以在设置中添加截图目录，收集之后新增的图片。</p>
+          <div class="shortcut-line"><kbd>Ctrl</kbd><span> + </span><kbd>Alt</kbd><span> + </span><kbd>S</kbd><span>选区截图</span></div>
+        </li>
+        <li class="step">
+          <span class="step-number" aria-hidden="true">02</span>
+          <h3>移到上沿，随手取用</h3>
+          <p>鼠标停在屏幕顶边即可展开。单击复制，双击看原图，长按约半秒进入标注；也能直接拖到支持的应用。</p>
+          <a class="text-link" href="https://github.com/xiaogao007/screenline-windows/blob/main/docs/WINDOWS.md">查看完整操作说明 <span aria-hidden="true">↗</span></a>
+        </li>
+        <li class="step">
+          <span class="step-number" aria-hidden="true">03</span>
+          <h3>用完，轻轻移出</h3>
+          <p>点击卡片叉号即可移出晾台。原图和本地副本都会保留，误操作还能撤销，重启后也可以恢复上次移出。</p>
+          <div class="shortcut-line"><kbd>Ctrl</kbd><span> + </span><kbd>Z</kbd><span>撤销移出</span></div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="local-first" aria-labelledby="local-title">
+      <div class="page-width local-layout">
+        <div class="section-heading">
+          <p class="eyebrow">轻量，也留有分寸</p>
+          <h2 id="local-title">图片留在本机。<br>更新由你决定。</h2>
+        </div>
+        <div class="local-details">
+          <div class="local-detail">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v12H3zM8 21h8m-4-4v4M7 9h4m-4 4h8"/></svg>
+            <div><h3>不用登录，也不用上传</h3><p>没有账户和统计。图片、设置与日志保存在本地，截图和剪贴板内容不会上传。</p></div>
+          </div>
+          <div class="local-detail">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7a8 8 0 0 0-13-2L3 9m0-6v6h6m-5 8a8 8 0 0 0 13 2l4-4m0 6v-6h-6"/></svg>
+            <div><h3>提醒更新，等你确认</h3><p>启动检查默认关闭，可在设置中开启。发现新版后由你确认下载安装，不会静默安装。</p></div>
+          </div>
+          <p class="network-note">手动检查更新、已开启的启动检查及下载更新时会联网；优先使用国内更新源，查询失败后回退 GitHub。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="download-section page-width section-space" id="download" aria-labelledby="download-title">
+      <div class="download-intro">
+        <p class="eyebrow">给下一张截图，找个位置</p>
+        <h2 id="download-title">现在，挂起来。</h2>
+        <p>安装版适合日常使用，便携版解压即可运行。<br>都可以从国内下载，保留 GitHub 备用入口。</p>
+        <a class="text-link github-fallback" href="https://github.com/xiaogao007/screenline-windows/releases/latest">GitHub 备用下载 <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="download-panel">
+        <div class="download-title-row"><h3>Screenline for Windows</h3><span class="release-version" data-release="version">版本信息加载中</span></div>
+        <p class="download-platform">Windows 10 / 11 x64 · 需要 .NET Framework 4.8</p>
+        <div class="download-actions">
+          <a class="button button-primary" data-download="installer" href="#download">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5"/></svg>
+            下载 Windows 安装包
+          </a>
+          <a class="button button-outline" data-download="portable" href="#download">下载便携版 <span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="download-hint">安装向导支持桌面快捷方式，可在 Windows 设置中卸载。</p>
+        <div class="release-status-line"><p id="release-status" role="status">正在读取国内下载地址…</p><button class="retry-button" id="retry-release" type="button" hidden disabled>重新获取</button></div>
+        <noscript><p class="noscript-message">启用 JavaScript 可读取最新国内下载地址；也可直接使用上方 GitHub 备用下载。</p></noscript>
+        <div class="release-links"><a data-download="checksums" href="#download">SHA-256 校验文件</a><a data-download="source" href="#download">版本源码</a><span data-release="size"></span><span data-release="date" hidden></span></div>
+        <details class="release-details"><summary>查看版本说明</summary><pre id="release-notes">正在读取最新版本说明…</pre></details>
+      </div>
+    </section>
+
+    <section class="faq-section page-width section-space" id="questions" aria-labelledby="faq-title">
+      <div class="section-heading"><p class="eyebrow">开始之前</p><h2 id="faq-title">你可能想知道</h2></div>
+      <div class="faq-list">
+        <details><summary>支持哪些 Windows 版本？<span class="disclosure-icon" aria-hidden="true"></span></summary><div class="faq-answer"><p>面向 Windows 10 / 11 x64，需要 .NET Framework 4.8。Windows 11 已内置，较新的 Windows 10 通常也已安装。ARM64、混合 DPI 和部分多显示器场景尚未完成实机验证。</p></div></details>
+        <details><summary>安装版和便携版怎么选？<span class="disclosure-icon" aria-hidden="true"></span></summary><div class="faq-answer"><p>安装版提供安装向导、开始菜单入口、可选桌面快捷方式和卸载入口，适合长期使用。便携版需要完整解压 ZIP 后运行 Screenline.exe，保留同目录下的配置文件。两个版本都把图片和设置存放在本机用户目录。</p></div></details>
+        <details><summary>为什么 Windows 提示“无法识别的应用”？<span class="disclosure-icon" aria-hidden="true"></span></summary><div class="faq-answer"><p>程序与安装器目前尚未进行 Windows 代码签名，SmartScreen 可能显示提示。请确认下载来自本官网、项目 GitHub Release 或本项目国内 OSS 地址，并核对 SHA-256 校验文件。不了解提示时，可先查看源码和<a href="https://github.com/xiaogao007/screenline-windows/blob/main/docs/WINDOWS.md">Windows 使用说明</a>。</p></div></details>
+        <details><summary>它会自动读取我的剪贴板吗？<span class="disclosure-icon" aria-hidden="true"></span></summary><div class="faq-answer"><p>“收集剪贴板中的纯图片”默认关闭，需要在设置中主动开启。默认仅监控截图目录中启动监控后新增的图片，不会扫描导入旧文件。你也可以从托盘主动粘贴一张剪贴板图片。</p></div></details>
+        <details><summary>移出截图或卸载，会删除我的图片吗？<span class="disclosure-icon" aria-hidden="true"></span></summary><div class="faq-answer"><p>移出晾台不会删除原图或本地副本，也不会释放磁盘空间；卸载保留本地图片与设置。数据位于 <code>%LOCALAPPDATA%\Screenline</code>。需要清理时，请先退出程序，再备份或整理该目录。</p></div></details>
+        <details><summary>如何反馈问题或参与开发？<span class="disclosure-icon" aria-hidden="true"></span></summary><div class="faq-answer"><p>在 <a href="https://github.com/xiaogao007/screenline-windows/issues">GitHub Issues</a> 提交问题，附上 Windows 版本、显示器缩放比例和复现步骤。提交截图与日志前，请检查其中的个人信息。项目采用 MIT 许可证，欢迎查看源码和提交改进。</p></div></details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer page-width">
+    <div class="footer-top"><a class="brand footer-brand" href="#top" aria-label="返回截图晾台首页"><img src="./assets/logo.svg" alt="" width="32" height="32"><span>截图晾台 <span class="footer-en">Screenline</span></span></a><nav aria-label="项目链接"><a href="https://github.com/xiaogao007/screenline-windows">源代码</a><a href="https://github.com/xiaogao007/screenline-windows/issues">问题反馈</a><a href="https://github.com/xiaogao007/screenline-windows/blob/main/LICENSE">MIT 许可证</a></nav></div>
+    <p class="footer-note">受 Alejandro Buján 的 <a href="https://github.com/alejandrobujan/tendedero">Tendedero</a> 启发，以独立名称与图标重新实现 Windows 版本。非上游官方产品。</p>
+    <p class="footer-privacy">官网不提供截图上传或在线处理。访问官网或下载文件时，网站服务器与文件服务可能记录 IP、请求时间、访问路径和浏览器信息。</p>
+    <p class="footer-caption">给截图一处位置，给桌面留些空间。</p>
+  </footer>
+</body>
+</html>

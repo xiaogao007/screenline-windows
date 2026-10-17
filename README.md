@@ -4,11 +4,13 @@
 
 Screenline 受 [Tendedero](https://github.com/alejandrobujan/tendedero) 启发，以 C#、WPF 和 Windows API 重新实现截图晾台交互，面向 **Windows 10 / 11 x64**。项目使用独立名称和图标。
 
-**[国内安装包 · v0.1.8](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.8/Screenline-v0.1.8-windows-x64-setup.exe)** · [GitHub 备用下载](https://github.com/xiaogao007/screenline-windows/releases/latest) · [Windows 使用与常见问题](docs/WINDOWS.md)
+**[工具官网 · 国内下载](https://screenline.xiaogao.xyz/)** · [国内安装包 · v0.1.8](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.8/Screenline-v0.1.8-windows-x64-setup.exe) · [GitHub 备用下载](https://github.com/xiaogao007/screenline-windows/releases/latest) · [Windows 使用与常见问题](docs/WINDOWS.md)
 
 ![截图晾台界面：截图以相片卡片挂在屏幕顶端](docs/images/shelf-preview.png)
 
 ## 下载与运行
+
+中文官网：**https://screenline.xiaogao.xyz/**，提供界面介绍、操作说明、国内安装包与便携版下载。官网从同源接口获取 OSS 签名版本清单，验证通过后展示当前国内版本与下载地址；清单不可用时保留 GitHub 备用入口。后续正式版本完成 OSS 同步后，官网无需重新部署即可显示新的国内下载。网站源码位于 [website](website/)，部署与回退方法见 [官网部署说明](website/DEPLOY.md)。
 
 国内文件从 v0.1.8 起由 GitHub Actions 在正式 Release 成功后同步至阿里云杭州 OSS。新版本刚发布、同步尚未完成时，可使用 [GitHub 备用下载](https://github.com/xiaogao007/screenline-windows/releases/latest)。v0.1.7 的首次 OSS 发布未通过上传前校验，该版本仅在 GitHub 提供下载。
 

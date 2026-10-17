@@ -4,11 +4,11 @@
 
 ## 安装与首次运行
 
-从仓库的 [最新 Release](https://github.com/xiaogao007/screenline-windows/releases/latest) 下载 `Screenline-vX.Y.Z-windows-x64-setup.exe`，将 `vX.Y.Z` 替换为实际版本号。安装版从 v0.1.3 起提供，支持简体中文和 English 安装界面。
+从 [中文官网](https://screenline.xiaogao.xyz/#download) 获取国内安装包，或从仓库的 [最新 Release](https://github.com/xiaogao007/screenline-windows/releases/latest) 备用下载 `Screenline-vX.Y.Z-windows-x64-setup.exe`，将 `vX.Y.Z` 替换为实际版本号。安装版从 v0.1.3 起提供，支持简体中文和 English 安装界面。国内文件分发从 v0.1.8 起提供。
 
 安装器默认将程序安装到当前用户的 `%LOCALAPPDATA%\Programs\Screenline`，不需要管理员权限。安装时可选择目录，并可取消默认勾选的“创建桌面快捷方式”；安装器还会创建开始菜单入口和 Windows“已安装的应用 / 应用和功能”中的卸载入口。
 
-也可以下载 `Screenline-vX.Y.Z-windows-x64.zip` 使用便携版：完整解压后双击 `Screenline.exe`，不要直接在压缩包内运行。请保留同目录中的 `Screenline.exe.config`。两种版本均使用 .NET Framework 4.8；安装器会检查此前提，未安装时需先补齐后再运行安装器。
+也可以下载 `Screenline-vX.Y.Z-windows-x64.zip` 使用便携版：完整解压后双击 `Screenline.exe`，不要直接在压缩包内运行。请保留同目录中的 `Screenline.exe.config` 和新版附带的 `update-source.json`。两种版本均使用 .NET Framework 4.8；安装器会检查此前提，未安装时需先补齐后再运行安装器。
 
 应用常驻系统托盘，不会一直在任务栏显示主窗口。托盘图标可能被 Windows 收进“显示隐藏的图标”区域。右键图标可截图、导入图片、粘贴剪贴板图片、打开设置、本地图库或退出。
 
@@ -84,9 +84,11 @@ Get-FileHash -Algorithm SHA256 -LiteralPath .\Screenline-vX.Y.Z-windows-x64-setu
 
 从 v0.1.5 起，右键托盘图标选择“检查更新”，或在“设置”中点击“检查更新”。窗口会显示当前版本和检查进度；检查完成后显示最新正式版本，并提供版本说明链接。预发布版本不会作为正式更新提供，当前版本不落后时会显示已是最新版本。
 
-有更新时，点击下载按钮。安装包和校验文件均来自本项目同一个 GitHub Release；校验通过后才可点击“退出并安装”。安装前先保存设置和未完成的标注。点击后，Screenline 打开安装向导并退出；按向导完成升级，随后重新运行应用。校验失败、下载中断或取消时，不会运行安装包，可以重新检查、重试或打开 Release 页面手动下载。
+v0.1.7 及更新版本会优先读取国内 OSS 的签名清单，验证 RSA-SHA256 签名后比较版本；清单连接、签名或格式验证失败时回退 GitHub。国内文件分发从 v0.1.8 起提供。v0.1.6 及更早版本只支持 GitHub，无法连接时需从官网手动下载安装一次 v0.1.8 或更新版本。
 
-已下载的安装包缓存在 `%LOCALAPPDATA%\Screenline\Updates` 内的独立子目录。手动检查更新会访问 GitHub API，下载时访问 GitHub 的附件服务；请求包含应用版本信息，不使用 GitHub 账户凭据，不会上传截图、剪贴板内容、设置或日志。网络不可用、GitHub 访问受限或 API 限流时，手动检查窗口会显示错误，稍后可重试。安装包尚未代码签名，Windows 可能仍显示 SmartScreen 提示。
+有更新时，点击下载按钮。国内安装包会核对签名清单中的文件大小与 SHA-256；GitHub 安装包会核对同一 Release 的 `SHA256SUMS.txt`。校验通过后才可点击“退出并安装”。安装前先保存设置和未完成的标注。点击后，Screenline 打开安装向导并退出；按向导完成升级，随后重新运行应用。校验失败、下载中断或取消时，不会运行安装包，可以重新检查、重试或打开 Release 页面手动下载。国内安装包下载失败时不会自动切换安装包来源，可选择 GitHub 备用入口。
+
+已下载的安装包缓存在 `%LOCALAPPDATA%\Screenline\Updates` 内的独立子目录。更新检查和主动下载会访问已配置的国内 OSS 更新源，或回退后的 GitHub 及附件服务；请求包含应用版本信息，不使用 GitHub 或阿里云账户凭据，不会上传截图、剪贴板内容、设置或日志。网络不可用或服务受限时，手动检查窗口会显示错误，稍后可重试。安装包尚未代码签名，Windows 可能仍显示 SmartScreen 提示；清单签名不代替 Windows 代码签名。
 
 ### 如何在启动时自动检查更新
 
