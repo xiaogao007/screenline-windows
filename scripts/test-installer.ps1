@@ -104,13 +104,20 @@ function Assert-Shortcut([string]$Path, [string]$Description) {
 }
 
 function Wait-ForUninstall {
+    # Inno's first phase can exit before the temporary second phase reaches
+    # usPostUninstall. Await our installation's startup cleanup as well, while
+    # preserving any external portable / pre-existing startup entry.
+    $waitForOwnedStartupRemoval = $ownedStartup -and
+        $ownedStartupValue -ceq ('"' + $installedExecutable + '"')
     $deadline = [DateTime]::UtcNow.AddSeconds(30)
     while ([DateTime]::UtcNow -lt $deadline) {
         if (!(Test-Path -LiteralPath $installedExecutable) -and
-            !(Test-Path -LiteralPath $uninstallerPath) -and $null -eq (Get-InstallRecord $registryView)) { return }
+            !(Test-Path -LiteralPath $uninstallerPath) -and $null -eq (Get-InstallRecord $registryView)) {
+            if (!$waitForOwnedStartupRemoval -or $null -eq (Get-StartupValue)) { return }
+        }
         Start-Sleep -Milliseconds 200
     }
-    throw 'Uninstaller did not remove the installed executable and registration within 30 seconds.'
+    throw 'Uninstaller did not finish removing installed files, registration, and any owned installation startup entry within 30 seconds.'
 }
 
 $outputRoot = Resolve-TestPath $OutputDirectory
