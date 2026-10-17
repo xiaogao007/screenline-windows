@@ -1,17 +1,15 @@
 # v0.1.7 · 国内更新源支持
 
-国内文件在 GitHub Release 成功后由 Actions 同步。同步尚未完成或国内下载失败时，可使用下方 GitHub 备用入口。
+本版已在 GitHub 发布，但首次 OSS 任务未通过上传前校验，未上传国内文件。本版仅提供 GitHub 下载；国内分发由 [v0.1.8](RELEASE-v0.1.8.md) 修复后启用。
 
-这一版为 GitHub 访问不稳定的用户增加国内下载与应用内更新源，同时保留 GitHub Release 作为备用。
+这一版新增应用内国内更新源的读取、签名验证和版本说明支持，同时保留 GitHub Release 作为备用。
 
 ## 下载与首次升级
 
-- [国内 Windows x64 安装包](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/Screenline-v0.1.7-windows-x64-setup.exe)
-- [国内 Windows x64 便携版](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/Screenline-v0.1.7-windows-x64.zip)
-- [国内 SHA-256 校验文件](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/SHA256SUMS.txt)
-- [GitHub Release 备用下载](https://github.com/xiaogao007/screenline-windows/releases/tag/v0.1.7)
+- [GitHub Release 下载](https://github.com/xiaogao007/screenline-windows/releases/tag/v0.1.7)
+- [v0.1.8 国内下载与迁移说明](RELEASE-v0.1.8.md)
 
-v0.1.6 及更早版本的更新查询依赖 GitHub。如果 GitHub 无法访问，需要手动下载安装一次本版；此后即可使用随程序分发的国内更新源配置。便携版请完整解压 ZIP，保留 `Screenline.exe.config` 和 `update-source.json`。安装升级会保留本地图片与设置。
+v0.1.6 及更早版本的更新查询依赖 GitHub。如果 GitHub 无法访问，请手动下载安装 v0.1.8 或更新版本。已安装本版的用户可在应用内检查更新。便携版请完整解压 ZIP，保留 `Screenline.exe.config` 和 `update-source.json`。安装升级会保留本地图片与设置。
 
 ## 更新行为
 

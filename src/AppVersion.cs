@@ -11,7 +11,7 @@ namespace Screenline
                 var attribute = (AssemblyInformationalVersionAttribute)System.Attribute.GetCustomAttribute(
                     typeof(AppVersion).Assembly, typeof(AssemblyInformationalVersionAttribute));
                 return attribute == null || string.IsNullOrWhiteSpace(attribute.InformationalVersion)
-                    ? "0.1.7" : attribute.InformationalVersion;
+                    ? "0.1.8" : attribute.InformationalVersion;
             }
         }
     }

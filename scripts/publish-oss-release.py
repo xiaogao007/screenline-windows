@@ -117,7 +117,7 @@ def local_assets(directory, manifest):
     _, size, digest = assets[manifest["installer"]]
     if size != manifest["size"] or digest != manifest["sha256"]:
         raise ValueError("Signed manifest does not match the installer")
-    if (directory / "release-notes.txt").read_text(encoding="utf-8") != manifest["notes"] + "\n":
+    if (directory / "release-notes.txt").read_bytes() != (manifest["notes"] + "\n").encode("utf-8"):
         raise ValueError("Signed manifest does not match the release notes")
     return assets
 

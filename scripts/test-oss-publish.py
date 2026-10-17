@@ -53,7 +53,7 @@ class PublishTests(unittest.TestCase):
             (self.directory / name).write_bytes(data)
             checksum_lines.append(hashlib.sha256(data).hexdigest() + "  " + name)
         (self.directory / "SHA256SUMS.txt").write_text("\n".join(checksum_lines) + "\n", encoding="utf-8")
-        (self.directory / "release-notes.txt").write_text("Update notes\n", encoding="utf-8")
+        (self.directory / "release-notes.txt").write_bytes(b"Update notes\n")
         setup_bytes = (self.directory / self.installer).read_bytes()
         self.manifest = {"schema": 1, "tag": self.tag, "installer": self.installer, "size": len(setup_bytes),
                          "sha256": hashlib.sha256(setup_bytes).hexdigest(), "notes": "Update notes"}
@@ -109,6 +109,47 @@ class PublishTests(unittest.TestCase):
         (self.directory / self.installer).write_bytes(b"tampered")
         with self.assertRaises(ValueError):
             publisher.publish(self.config, self.directory, self.manifest_path, storage, self.readback(storage))
+        self.assertFalse(storage.writes)
+
+    def test_signed_crlf_notes_publish_without_normalizing_bytes(self):
+        self.manifest["notes"] = "Release notes\r\nA Windows line\r\nSecond line"
+        self.manifest_path.write_text(json.dumps(self.manifest), encoding="utf-8")
+        expected_notes = (self.manifest["notes"] + "\n").encode("utf-8")
+        (self.directory / "release-notes.txt").write_bytes(expected_notes)
+        storage = FakeStorage()
+        publisher.publish(self.config, self.directory, self.manifest_path, storage, self.readback(storage))
+        key = "screenline/releases/" + self.tag + "/release-notes.txt"
+        self.assertEqual(storage.objects[key], expected_notes)
+        self.assertEqual(storage.objects[self.latest_key], self.manifest_path.read_bytes())
+
+    def test_signed_mixed_line_endings_publish_without_normalizing_bytes(self):
+        self.manifest["notes"] = "Release notes\nA source-document line\n\nBuild details\r\nA Windows build line\r\n"
+        self.manifest_path.write_text(json.dumps(self.manifest), encoding="utf-8")
+        expected_notes = (self.manifest["notes"] + "\n").encode("utf-8")
+        (self.directory / "release-notes.txt").write_bytes(expected_notes)
+        storage = FakeStorage()
+        publisher.publish(self.config, self.directory, self.manifest_path, storage, self.readback(storage))
+        key = "screenline/releases/" + self.tag + "/release-notes.txt"
+        self.assertEqual(storage.objects[key], expected_notes)
+
+    def test_one_changed_note_byte_preserves_previous_latest_and_blocks_all_uploads(self):
+        storage = FakeStorage()
+        previous = self.old_manifest(storage)
+        (self.directory / "release-notes.txt").write_bytes(b"Vpdate notes\n")
+        with self.assertRaisesRegex(ValueError, "Signed manifest does not match the release notes"):
+            publisher.publish(self.config, self.directory, self.manifest_path, storage, self.readback(storage))
+        self.assertEqual(storage.objects[self.latest_key], previous)
+        self.assertFalse(storage.writes)
+
+    def test_newline_normalization_is_a_note_change_and_blocks_publish(self):
+        self.manifest["notes"] = "Release notes\r\nWindows line\nSource line"
+        self.manifest_path.write_text(json.dumps(self.manifest), encoding="utf-8")
+        (self.directory / "release-notes.txt").write_bytes((self.manifest["notes"].replace("\r\n", "\n") + "\n").encode("utf-8"))
+        storage = FakeStorage()
+        previous = self.old_manifest(storage)
+        with self.assertRaisesRegex(ValueError, "Signed manifest does not match the release notes"):
+            publisher.publish(self.config, self.directory, self.manifest_path, storage, self.readback(storage))
+        self.assertEqual(storage.objects[self.latest_key], previous)
         self.assertFalse(storage.writes)
 
     def test_existing_immutable_asset_conflict_preserves_old_latest(self):

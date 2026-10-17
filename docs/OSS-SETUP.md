@@ -1,6 +1,6 @@
 # 阿里云 OSS 国内更新源：首次配置
 
-v0.1.7 起，正式构建携带国内更新源配置。本仓库使用杭州地域的独立 Bucket `screenline-updates-xiaogao007`，公开前缀为 `https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/`。v0.1.6 及更早版本仍使用 GitHub，无法访问 GitHub 时需从国内链接手动安装一次新版。本文同时记录首次配置和维护方式；自行部署时请替换为自己的资源。
+v0.1.8 起提供正式国内文件分发，使用杭州地域的独立 Bucket `screenline-updates-xiaogao007`，公开前缀为 `https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/`。v0.1.7 已支持签名国内更新源，但首次 OSS 发布未通过上传前校验，该版本未提供国内镜像；校验修复随 v0.1.8 发布。v0.1.7 用户可在应用内检查更新，v0.1.6 及更早版本无法访问 GitHub 时，需从国内链接手动安装一次 v0.1.8 或更新版本。本文同时记录首次配置和维护方式；自行部署时请替换为自己的资源。
 
 ## 先采用最小配置
 

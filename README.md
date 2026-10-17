@@ -4,17 +4,17 @@
 
 Screenline 受 [Tendedero](https://github.com/alejandrobujan/tendedero) 启发，以 C#、WPF 和 Windows API 重新实现截图晾台交互，面向 **Windows 10 / 11 x64**。项目使用独立名称和图标。
 
-**[国内安装包 · v0.1.7](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/Screenline-v0.1.7-windows-x64-setup.exe)** · [GitHub 备用下载](https://github.com/xiaogao007/screenline-windows/releases/latest) · [Windows 使用与常见问题](docs/WINDOWS.md)
+**[国内安装包 · v0.1.8](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.8/Screenline-v0.1.8-windows-x64-setup.exe)** · [GitHub 备用下载](https://github.com/xiaogao007/screenline-windows/releases/latest) · [Windows 使用与常见问题](docs/WINDOWS.md)
 
 ![截图晾台界面：截图以相片卡片挂在屏幕顶端](docs/images/shelf-preview.png)
 
 ## 下载与运行
 
-国内文件由 GitHub Actions 在正式 Release 成功后同步至阿里云杭州 OSS。新版本刚发布、同步尚未完成时，可使用 [GitHub 备用下载](https://github.com/xiaogao007/screenline-windows/releases/latest)。
+国内文件从 v0.1.8 起由 GitHub Actions 在正式 Release 成功后同步至阿里云杭州 OSS。新版本刚发布、同步尚未完成时，可使用 [GitHub 备用下载](https://github.com/xiaogao007/screenline-windows/releases/latest)。v0.1.7 的首次 OSS 发布未通过上传前校验，该版本仅在 GitHub 提供下载。
 
-- [国内 Windows x64 安装包 · v0.1.7](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/Screenline-v0.1.7-windows-x64-setup.exe)
-- [国内 Windows x64 便携版 · v0.1.7](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/Screenline-v0.1.7-windows-x64.zip)
-- [国内 SHA-256 校验文件 · v0.1.7](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/SHA256SUMS.txt) · [GitHub Release 备用](https://github.com/xiaogao007/screenline-windows/releases/latest)
+- [国内 Windows x64 安装包 · v0.1.8](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.8/Screenline-v0.1.8-windows-x64-setup.exe)
+- [国内 Windows x64 便携版 · v0.1.8](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.8/Screenline-v0.1.8-windows-x64.zip)
+- [国内 SHA-256 校验文件 · v0.1.8](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.8/SHA256SUMS.txt) · [GitHub Release 备用](https://github.com/xiaogao007/screenline-windows/releases/latest)
 
 GitHub [Releases](https://github.com/xiaogao007/screenline-windows/releases/latest) 的 **Assets** 同时保留以下文件，`vX.Y.Z` 为实际版本号：
 
@@ -60,7 +60,7 @@ GitHub [Releases](https://github.com/xiaogao007/screenline-windows/releases/late
 
 ## 应用内检查更新
 
-v0.1.7 新增国内更新源支持，使用阿里云杭州 OSS 的默认 HTTPS 地址。配置随程序一同分发，用户无需注册阿里云账号。v0.1.6 及更早版本只认识 GitHub，GitHub 不可达时，需要从国内链接手动下载安装一次 v0.1.7，才能使用新的更新源。继续使用便携版时，请完整解压新版 ZIP，保留 `Screenline.exe.config` 和 `update-source.json`。
+v0.1.7 新增国内更新源支持，国内文件分发从 v0.1.8 起提供，使用阿里云杭州 OSS 的默认 HTTPS 地址。配置随程序一同分发，用户无需注册阿里云账号。v0.1.6 及更早版本只认识 GitHub，GitHub 不可达时，需要从国内链接手动下载安装一次 v0.1.8 或更新版本，才能使用新的更新源。已安装 v0.1.7 的用户可直接在应用内检查更新。继续使用便携版时，请完整解压新版 ZIP，保留 `Screenline.exe.config` 和 `update-source.json`。
 
 从托盘菜单或设置点击 **检查更新**，新版会优先读取国内源的签名版本清单，验证 RSA-SHA256 签名后再比较正式版本，并在应用内显示中文版本说明。国内清单连接、签名或格式验证失败时，回退本项目的 GitHub Releases；已验证的国内清单没有新版本时，检查直接结束。没有配置国内源的自行构建版本仍使用 GitHub。
 
