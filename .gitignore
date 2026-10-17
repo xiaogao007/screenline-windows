@@ -1,0 +1,9 @@
+bin/
+obj/
+*.user
+tests/results/
+tests/desktop-smoke.txt
+tests/design-lint.json
+tests/premium-audit.json
+Screenline.exe
+dist/

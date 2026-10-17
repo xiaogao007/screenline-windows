@@ -1,0 +1,11 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["src"],
+  "locale": "zh-CN",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Form", "Scrollbar", "Toast", "CRUD"],
+  "ownership": { "Form": "native", "Scrollbar": "native", "Toast": "authored", "CRUD": "authored" },
+  "requiredCommands": ["build", "verification"],
+  "commands": { "build": "powershell -ExecutionPolicy Bypass -File ./build.ps1", "verification": "powershell -ExecutionPolicy Bypass -File ./build.ps1 -Test" },
+  "evidence": { "crudFullFlow": "src/ServiceVerification.cs", "failurePaths": "src/ServiceVerification.cs", "nativeUi": "tests/results/report.txt" }
+}
