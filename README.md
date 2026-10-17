@@ -4,18 +4,24 @@
 
 Screenline 受 [Tendedero](https://github.com/alejandrobujan/tendedero) 启发，以 C#、WPF 和 Windows API 重新实现截图晾台交互，面向 **Windows 10 / 11 x64**。项目使用独立名称和图标。
 
-**[下载 Windows 版](https://github.com/xiaogao007/screenline-windows/releases/latest)** · [版本记录](https://github.com/xiaogao007/screenline-windows/releases) · [Windows 使用与常见问题](docs/WINDOWS.md)
+**[国内安装包 · v0.1.7](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/Screenline-v0.1.7-windows-x64-setup.exe)** · [GitHub 备用下载](https://github.com/xiaogao007/screenline-windows/releases/latest) · [Windows 使用与常见问题](docs/WINDOWS.md)
 
 ![截图晾台界面：截图以相片卡片挂在屏幕顶端](docs/images/shelf-preview.png)
 
 ## 下载与运行
 
-打开 [Releases](https://github.com/xiaogao007/screenline-windows/releases/latest)，在 **Assets** 中选择下载，`vX.Y.Z` 为实际版本号：
+国内文件由 GitHub Actions 在正式 Release 成功后同步至阿里云杭州 OSS。新版本刚发布、同步尚未完成时，可使用 [GitHub 备用下载](https://github.com/xiaogao007/screenline-windows/releases/latest)。
+
+- [国内 Windows x64 安装包 · v0.1.7](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/Screenline-v0.1.7-windows-x64-setup.exe)
+- [国内 Windows x64 便携版 · v0.1.7](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/Screenline-v0.1.7-windows-x64.zip)
+- [国内 SHA-256 校验文件 · v0.1.7](https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/releases/v0.1.7/SHA256SUMS.txt) · [GitHub Release 备用](https://github.com/xiaogao007/screenline-windows/releases/latest)
+
+GitHub [Releases](https://github.com/xiaogao007/screenline-windows/releases/latest) 的 **Assets** 同时保留以下文件，`vX.Y.Z` 为实际版本号：
 
 | 文件 | 用途 |
 |---|---|
 | **Screenline-vX.Y.Z-windows-x64-setup.exe** | 安装版：创建开始菜单入口，可选桌面快捷方式，支持 Windows 设置卸载 |
-| **Screenline-vX.Y.Z-windows-x64.zip** | 便携版：完整解压后运行 `Screenline.exe`，保留相邻的 `Screenline.exe.config` |
+| **Screenline-vX.Y.Z-windows-x64.zip** | 便携版：完整解压后运行 `Screenline.exe`，保留相邻的 `Screenline.exe.config` 和 `update-source.json` |
 | `Screenline-vX.Y.Z-source.zip` | 对应版本源码与文档，不含可运行程序 |
 | `SHA256SUMS.txt` | 安装包、便携包和源码包的 SHA-256 校验值 |
 
@@ -54,19 +60,21 @@ Screenline 受 [Tendedero](https://github.com/alejandrobujan/tendedero) 启发�
 
 ## 应用内检查更新
 
-维护者正在准备可选国内更新源，配置完成后可让新版客户端优先从 OSS 读取签名清单和安装包，并在应用内显示中文版本说明。当前已发布 v0.1.6 仍使用 GitHub；国内源尚未启用。首次配置见 [阿里云 OSS 接入指南](docs/OSS-SETUP.md)，初期可用 OSS 默认 HTTPS 地址，无需先购买域名或 CDN。
+v0.1.7 新增国内更新源支持，使用阿里云杭州 OSS 的默认 HTTPS 地址。配置随程序一同分发，用户无需注册阿里云账号。v0.1.6 及更早版本只认识 GitHub，GitHub 不可达时，需要从国内链接手动下载安装一次 v0.1.7，才能使用新的更新源。继续使用便携版时，请完整解压新版 ZIP，保留 `Screenline.exe.config` 和 `update-source.json`。
 
-从托盘菜单或设置点击 **检查更新**，应用会从本项目的 GitHub Releases 查询最新正式版本，显示当前版本和最新版本，并提供版本说明链接。有更新时可主动下载安装包；下载完成后，应用先比对同一 Release 的 `SHA256SUMS.txt`，校验通过后才提供运行入口。
+从托盘菜单或设置点击 **检查更新**，新版会优先读取国内源的签名版本清单，验证 RSA-SHA256 签名后再比较正式版本，并在应用内显示中文版本说明。国内清单连接、签名或格式验证失败时，回退本项目的 GitHub Releases；已验证的国内清单没有新版本时，检查直接结束。没有配置国内源的自行构建版本仍使用 GitHub。
+
+有更新时，由你确认下载安装包。国内下载会核对签名清单中的安装包大小与 SHA-256；GitHub 下载会核对同一 Release 的 `SHA256SUMS.txt`。通过校验后才提供运行入口。国内安装包下载失败时可以重试，或打开 GitHub Release 备用下载；应用不会自动切换到另一个安装包地址。
 
 从 v0.1.6 起，可在 **设置 → 版本与更新** 勾选 **启动时检查更新** 并保存。该选项默认关闭，旧版设置升级后也保持关闭；开启后，从下次启动起每次在后台检查一次。有新正式版本时显示 Windows 托盘通知，并在托盘菜单保留新版提示；点击提示打开更新窗口，再由你选择是否下载安装。检查不会抢焦点或自动打开窗口，没有更新或网络失败时不打扰。关闭并保存会取消正在进行的启动检查和待处理提醒；本次运行中开启后会在下次启动生效。
 
-安装前请先保存设置和标注。点击 **退出并安装** 会打开 Windows 安装向导，并退出 Screenline，让安装器更新程序文件。安装器仍由你确认安装；升级保留本地图片与设置。便携版也可以使用该入口，但会转为安装版；继续使用便携版可到 Release 页面下载 ZIP。检查失败、网络受限或校验失败时，可以重试或在浏览器中打开 Release 页面，应用不会运行未通过校验的文件。
+安装前请先保存设置和标注。点击 **退出并安装** 会打开 Windows 安装向导，并退出 Screenline，让安装器更新程序文件。安装器仍由你确认安装；升级保留本地图片与设置。便携版也可以使用该入口，但会转为安装版；继续使用便携版可下载对应版本的国内 ZIP 或 GitHub Release ZIP。检查失败、网络受限或校验失败时，可以重试或在浏览器中打开 Release 页面，应用不会运行未通过校验的文件。
 
-更新检查仅在手动点击，或已保存开启“启动时检查更新”后启动应用时联网；不会自动下载或静默安装。设置损坏而从备份恢复时，启动更新检查会重新关闭，需要再次主动开启。程序和安装器尚未代码签名，SHA-256 校验用于确认下载文件与 Release 附件一致。
+更新检查仅在手动点击，或已保存开启“启动时检查更新”后启动应用时联网；不会自动下载或静默安装。设置损坏而从备份恢复时，启动更新检查会重新关闭，需要再次主动开启。国内清单签名与下载校验不等同于 Windows 代码签名，程序和安装器目前仍未代码签名。维护者首次配置见 [阿里云 OSS 接入指南](docs/OSS-SETUP.md)。
 
 ## 本地数据与隐私
 
-应用没有账户和统计。手动检查更新、已开启的启动更新检查及主动下载更新会向 GitHub 及其下载服务发起 HTTPS 请求；请求携带应用版本信息，不使用 GitHub 账户凭据，不上传图片、剪贴板、设置或日志。图片、设置、日志存放在 `%LOCALAPPDATA%\Screenline`；导入时建立自己的副本，不修改或删除外部源文件。
+应用没有账户和统计。手动检查更新、已开启的启动更新检查及主动下载更新会向已配置的国内 OSS 更新源，或回退后的 GitHub 及其下载服务发起 HTTPS 请求；请求携带应用版本信息，不使用 GitHub 或阿里云账户凭据，不上传图片、剪贴板、设置或日志。客户端只携带签名公钥，不包含签名私钥或云服务凭据。图片、设置、日志存放在 `%LOCALAPPDATA%\Screenline`；导入时建立自己的副本，不修改或删除外部源文件。
 
 移出晾台只更新可恢复记录，**不会释放图片占用的磁盘空间，也不会自动送进 Windows 回收站**。托盘“打开本地图库”可查看图片文件。需要清理时先退出程序，再备份或整理该目录；自行删除后，相应图片将无法恢复。
 
@@ -91,7 +99,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -Test
 
 向 GitHub 推送 `vX.Y.Z` 版本标签后，[Windows Release 工作流](.github/workflows/release.yml) 会在 Windows runner 上按标签写入程序版本、执行 `build.ps1 -Version vX.Y.Z -Test -ClipboardTest`，并生成安装器、便携程序、对应标签源码及 `SHA256SUMS.txt`。除默认自检外，CI 还会实际验证剪贴板占用后的复制恢复、图片与文件格式及退出后的粘贴。随后在隔离目录静默安装和重复安装，运行安装后的程序自检，检查快捷方式、卸载注册信息及卸载结果。只有构建、自检、安装卸载检查、打包与附件上传均成功，才会公开 Release。已有的正式发布不会被覆盖。
 
-也可以在仓库的 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 页面手动运行工作流；手动运行同样构建、自检、生成并验证安装器及保存产物，不创建 Release。无需额外配置 GitHub Secrets。标签发布步骤、本地安装包构建与失败重试方法见 [维护者发布说明](docs/RELEASING.md)。
+也可以在仓库的 [Actions](https://github.com/xiaogao007/screenline-windows/actions) 页面手动运行工作流；手动运行同样构建、自检、生成并验证安装器及保存产物，不创建 Release。只发布 GitHub Release 无需额外配置 Secrets。
+
+本仓库已配置国内镜像：正式版本在 GitHub Release 发布成功后上传 OSS，核对版本文件能够公开下载，最后更新签名版本清单。阿里云权限通过 GitHub OIDC 获取短期凭据，CI 签名私钥由 GitHub Actions Secret 提供，不写入仓库、源码包或客户端。国内镜像任务失败时，GitHub Release 仍然保留，国内最新版本提示不会提前更新。标签发布步骤、本地构建与失败重试方法见 [维护者发布说明](docs/RELEASING.md) 和 [OSS 接入指南](docs/OSS-SETUP.md)。
 
 ## 当前范围与限制
 

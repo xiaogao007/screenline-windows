@@ -1,6 +1,6 @@
 # 阿里云 OSS 国内更新源：首次配置
 
-当前 GitHub Release 为 v0.1.6。仓库正在准备可选国内更新源；只有阿里云账号、尚无 Bucket 时，不会自动创建资源或启用国内源。下列配置完成并验证后，再发布包含国内地址的新版本。此前已有版本继续使用 GitHub。
+v0.1.7 起，正式构建携带国内更新源配置。本仓库使用杭州地域的独立 Bucket `screenline-updates-xiaogao007`，公开前缀为 `https://screenline-updates-xiaogao007.oss-cn-hangzhou.aliyuncs.com/screenline/`。v0.1.6 及更早版本仍使用 GitHub，无法访问 GitHub 时需从国内链接手动安装一次新版。本文同时记录首次配置和维护方式；自行部署时请替换为自己的资源。
 
 ## 先采用最小配置
 
@@ -53,11 +53,56 @@ Bucket ACL 可保持私有，通过 Bucket Policy 仅允许匿名读取 `screenl
 建议使用阿里云 RAM OIDC 角色，为 Actions 获取短期凭据，不配置主账号长期 AccessKey。
 
 1. 在 RAM 创建 GitHub 的 OIDC 身份提供商：Issuer 为 `https://token.actions.githubusercontent.com`，Audience 为 `sts.aliyuncs.com`。
-2. 创建可被该提供商扮演的 RAM 角色。信任条件只允许本仓库的版本标签，例如 `repo:xiaogao007/screenline-windows:ref:refs/tags/v*`，不要允许任意 GitHub 仓库或 Pull Request。
+2. 创建可被该提供商扮演的 RAM 角色。信任条件只允许本仓库的版本标签，使用下方已核对的 immutable subject；不要允许任意 GitHub 仓库或 Pull Request。
 3. 角色权限仅允许对指定 Bucket 的 `screenline/*` 执行 `oss:PutObject` 和 `oss:GetObject`。不需要授予整个账号 OSS 管理权限。
 4. 记录角色 ARN、OIDC Provider ARN、Bucket 名称和地域。
 
-具体配置参考：[阿里云官方 GitHub Actions 凭据工具](https://github.com/aliyun/configure-aliyun-credentials-action)、[GitHub OIDC 说明](https://docs.github.com/zh/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers)。
+**本仓库应使用带不可变 ID 的 subject。** GitHub 已为 2026-07-15 之后创建的仓库启用 immutable subject。2026-10-17 只读查询仓库 API 和 `/repos/xiaogao007/screenline-windows/actions/oidc/customization/sub`，确认：
+
+```json
+{
+  "repository_id": 1422934656,
+  "owner_id": 67498351,
+  "created_at": "2026-10-17T04:15:55Z",
+  "use_default": true,
+  "use_immutable_subject": true,
+  "sub_claim_prefix": "repo:xiaogao007@67498351/screenline-windows@1422934656"
+}
+```
+
+因此，当前 workflow 的版本标签主体匹配值是：
+
+```text
+repo:xiaogao007@67498351/screenline-windows@1422934656:ref:refs/tags/v*
+```
+
+RAM 角色信任策略示例：仅将 `Principal.Federated` 替换为实际 OIDC Provider ARN；`oidc:iss`、`oidc:aud` 和带 ID 的 `oidc:sub` 保持如下值。`v*` 必须使用 `StringLike` 匹配。
+
+```json
+{
+  "Version": "1",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "sts:AssumeRole",
+    "Principal": {
+      "Federated": "acs:ram::你的阿里云账号ID:oidc-provider/你创建的提供商名称"
+    },
+    "Condition": {
+      "StringEquals": {
+        "oidc:iss": "https://token.actions.githubusercontent.com",
+        "oidc:aud": "sts.aliyuncs.com"
+      },
+      "StringLike": {
+        "oidc:sub": "repo:xiaogao007@67498351/screenline-windows@1422934656:ref:refs/tags/v*"
+      }
+    }
+  }]
+}
+```
+
+当前 `oss-mirror` job 未设置 GitHub environment，故 subject 使用 `ref:refs/tags/...`。该 job 仅在 GitHub 正式 Release 发布成功、非预发布且 `OSS_MIRROR_ENABLED=true` 时运行，并单独获得 `id-token: write`；手动运行工作流只进行构建验证。不要复制省略 `@67498351` 和 `@1422934656` 的旧式 subject 示例。将来更名、转移仓库、自定义 subject 或为 job 添加 environment 后，应先重新读取实际模板，再更新信任条件。
+
+具体配置参考：[阿里云官方 GitHub Actions 凭据工具](https://github.com/aliyun/configure-aliyun-credentials-action)、[GitHub immutable subject 规则](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims)、[阿里云 OIDC 信任条件说明](https://help.aliyun.com/zh/ram/implement-oidc-based-sso-from-okta)。
 
 ## 生成版本清单签名密钥
 
